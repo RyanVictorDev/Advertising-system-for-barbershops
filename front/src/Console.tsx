@@ -95,37 +95,35 @@ export function Console({
               <p className="eyebrow">Gestão</p>
               <h2>O vídeo continua ao lado.</h2>
             </div>
-            <div className="desk-bar">
-              {onClose ? (
-                <button type="button" className="btn btn-primary" onClick={onClose}>
-                  Voltar à tela
+            {onClose ? (
+              <button type="button" className="btn btn-primary" onClick={onClose}>
+                Voltar à tela
+              </button>
+            ) : null}
+            {onNext && onPrevious && onTogglePlayback ? (
+              <div className="skip-actions">
+                <button type="button" className="btn btn-ghost transport" onClick={onPrevious}>
+                  <TransportIcon name="previous" />
+                  <span>Música anterior</span>
                 </button>
-              ) : null}
-              {onNext && onPrevious && onTogglePlayback ? (
-                <>
-                  <div className="skip-actions">
-                    <button type="button" className="btn btn-ghost transport" onClick={onPrevious}>
-                      <TransportIcon name="previous" />
-                      <span>Música anterior</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost transport"
-                      onClick={onTogglePlayback}
-                      aria-pressed={!playing}
-                    >
-                      <TransportIcon name={playing ? "pause" : "play"} />
-                      <span>{playing ? "Pausar" : "Tocar"}</span>
-                    </button>
-                    <button type="button" className="btn btn-ghost transport" onClick={onNext}>
-                      <TransportIcon name="next" />
-                      <span>Próxima música</span>
-                    </button>
-                  </div>
-                  <p className="skip-now">{nowPlaying ? nowPlaying : "A faixa em cena aparece aqui."}</p>
-                </>
-              ) : null}
-            </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost transport"
+                  onClick={onTogglePlayback}
+                  aria-pressed={!playing}
+                >
+                  <TransportIcon name={playing ? "pause" : "play"} />
+                  <span>{playing ? "Pausar" : "Tocar"}</span>
+                </button>
+                <button type="button" className="btn btn-ghost transport" onClick={onNext}>
+                  <TransportIcon name="next" />
+                  <span>Próxima música</span>
+                </button>
+              </div>
+            ) : null}
+            {onNext && onPrevious && onTogglePlayback ? (
+              <p className="skip-now">{nowPlaying ? nowPlaying : "A faixa em cena aparece aqui."}</p>
+            ) : null}
           </div>
           {fields}
         </div>

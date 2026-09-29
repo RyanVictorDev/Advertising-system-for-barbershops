@@ -1,5 +1,5 @@
 export type YouTubePlayer = {
-  loadPlaylist: (args: { list: string; index?: number }) => void;
+  loadPlaylist: (playlistId: string, index?: number) => void;
   playVideo: () => void;
   pauseVideo: () => void;
   nextVideo: () => void;

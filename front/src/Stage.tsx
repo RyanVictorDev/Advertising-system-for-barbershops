@@ -240,6 +240,7 @@ export function Stage({
 
       {playlistId ? (
         <VideoFrame
+          key={playlistId}
           ref={playerRef}
           playlistId={playlistId}
           box={scene.video}
@@ -511,8 +512,7 @@ const VideoFrame = memo(
                     if (!alive) return;
                     const current = playerRef.current;
                     if (!current || current.getPlayerState() !== PLAYER_ENDED) return;
-                    current.loadPlaylist({ list: playlistRef.current, index: 0 });
-                    current.playVideo();
+                    current.loadPlaylist(playlistRef.current, 0);
                   }, 800),
                 );
               },
@@ -552,8 +552,8 @@ const VideoFrame = memo(
       loadedRef.current = playlistId;
       holdRef.current = false;
       setPlaying(false);
-      player.loadPlaylist({ list: playlistId, index: 0 });
-      player.playVideo();
+      setError(null);
+      player.loadPlaylist(playlistId, 0);
     }, [playlistId, ready]);
 
     useEffect(() => {
