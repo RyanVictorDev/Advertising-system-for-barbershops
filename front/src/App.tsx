@@ -26,6 +26,8 @@ export function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [admin, setAdmin] = useState(false);
   const [nowPlaying, setNowPlaying] = useState("");
+  const [playing, setPlaying] = useState(true);
+  const playingRef = useRef(true);
   const playerRef = useRef<VideoHandle>(null);
   const stateRef = useRef<SalonState | null>(null);
   const pendingRef = useRef<HousePatch | null>(null);
@@ -33,6 +35,23 @@ export function App() {
   const flightRef = useRef<Promise<string | null> | null>(null);
   const reportNowPlaying = useCallback((title: string) => {
     setNowPlaying((current) => (current === title ? current : title));
+  }, []);
+  const reportPlayback = useCallback((isPlaying: boolean) => {
+    playingRef.current = isPlaying;
+    setPlaying((current) => (current === isPlaying ? current : isPlaying));
+  }, []);
+  const togglePlayback = useCallback(() => {
+    const next = !playingRef.current;
+    playingRef.current = next;
+    setPlaying(next);
+    if (next) playerRef.current?.play();
+    else playerRef.current?.pause();
+  }, []);
+  const skip = useCallback((direction: "next" | "previous") => {
+    playingRef.current = true;
+    setPlaying(true);
+    if (direction === "next") playerRef.current?.next();
+    else playerRef.current?.previous();
   }, []);
 
   const applyServer = useCallback((salon: SalonState) => {
@@ -257,6 +276,7 @@ export function App() {
           onCloseAdmin={() => setAdmin(false)}
           playerRef={playerRef}
           onNowPlaying={reportNowPlaying}
+          onPlayback={reportPlayback}
         />
       ) : (
         <Console
@@ -285,8 +305,10 @@ export function App() {
           onSelectPlaylist={choosePlaylist}
           onChooseTheme={chooseTheme}
           onClose={() => setAdmin(false)}
-          onNext={() => playerRef.current?.next()}
-          onPrevious={() => playerRef.current?.previous()}
+          onNext={() => skip("next")}
+          onPrevious={() => skip("previous")}
+          onTogglePlayback={togglePlayback}
+          playing={playing}
           nowPlaying={nowPlaying}
         />
       ) : null}

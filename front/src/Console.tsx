@@ -27,6 +27,8 @@ type ConsoleProps = {
   onClose?: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  onTogglePlayback?: () => void;
+  playing?: boolean;
   nowPlaying?: string;
 };
 
@@ -46,6 +48,8 @@ export function Console({
   onClose,
   onNext,
   onPrevious,
+  onTogglePlayback,
+  playing = true,
   nowPlaying,
 }: ConsoleProps) {
   const shop = displayShop(state.shopName);
@@ -80,11 +84,19 @@ export function Console({
               </button>
             ) : null}
           </div>
-          {onNext && onPrevious ? (
+          {onNext && onPrevious && onTogglePlayback ? (
             <div className="skip-row">
               <div className="skip-actions">
                 <button type="button" className="btn btn-ghost" onClick={onPrevious}>
                   Música anterior
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={onTogglePlayback}
+                  aria-pressed={!playing}
+                >
+                  {playing ? "Pausar" : "Tocar"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={onNext}>
                   Próxima música

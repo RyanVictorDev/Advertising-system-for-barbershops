@@ -16,6 +16,7 @@ import type { Product, SalonState } from "./storage";
 import {
   PLAYER_BUFFERING,
   PLAYER_ENDED,
+  PLAYER_PAUSED,
   PLAYER_PLAYING,
   loadYouTubeApi,
   type YouTubePlayer,
@@ -32,6 +33,7 @@ type StageProps = {
   onCloseAdmin: () => void;
   playerRef: RefObject<VideoHandle | null>;
   onNowPlaying: (title: string) => void;
+  onPlayback: (playing: boolean) => void;
 };
 
 type Phase = "show" | "clear" | "move";
@@ -40,6 +42,8 @@ export type VideoHandle = {
   unmute: () => void;
   next: () => void;
   previous: () => void;
+  pause: () => void;
+  play: () => void;
 };
 
 type VideoFrameProps = {
@@ -47,9 +51,18 @@ type VideoFrameProps = {
   box: Box;
   onTitle: (title: string) => void;
   onNeedsSound: (needs: boolean) => void;
+  onPlayback: (playing: boolean) => void;
 };
 
-export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin, playerRef, onNowPlaying }: StageProps) {
+export function Stage({
+  state,
+  adminOpen,
+  onOpenAdmin,
+  onCloseAdmin,
+  playerRef,
+  onNowPlaying,
+  onPlayback,
+}: StageProps) {
   const stageRef = useRef<HTMLElement>(null);
   const [size, setSize] = useState(() => ({
     width: window.innerWidth,
@@ -232,6 +245,7 @@ export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin, playerRef, 
           box={scene.video}
           onTitle={onTitle}
           onNeedsSound={setNeedsSound}
+          onPlayback={onPlayback}
         />
       ) : (
         <div className="video-frame" style={toStyle(scene.video)}>
@@ -376,13 +390,18 @@ function VoidPanel({ spot, shop, tagline }: { spot: VoidSpot; shop: string; tagl
 }
 
 const VideoFrame = memo(
-  forwardRef<VideoHandle, VideoFrameProps>(function VideoFrame({ playlistId, box, onTitle, onNeedsSound }, ref) {
+  forwardRef<VideoHandle, VideoFrameProps>(function VideoFrame(
+    { playlistId, box, onTitle, onNeedsSound, onPlayback },
+    ref,
+  ) {
     const shellRef = useRef<HTMLDivElement>(null);
     const playerRef = useRef<YouTubePlayer | null>(null);
     const playlistRef = useRef(playlistId);
     const loadedRef = useRef<string | null>(null);
+    const holdRef = useRef(false);
     const onTitleRef = useRef(onTitle);
     const onNeedsSoundRef = useRef(onNeedsSound);
+    const onPlaybackRef = useRef(onPlayback);
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [ready, setReady] = useState(false);
@@ -390,11 +409,13 @@ const VideoFrame = memo(
     playlistRef.current = playlistId;
     onTitleRef.current = onTitle;
     onNeedsSoundRef.current = onNeedsSound;
+    onPlaybackRef.current = onPlayback;
 
     useImperativeHandle(ref, () => ({
       unmute() {
         const player = playerRef.current;
         if (!player) return;
+        holdRef.current = false;
         player.unMute();
         player.setVolume(80);
         player.playVideo();
@@ -402,13 +423,27 @@ const VideoFrame = memo(
       next() {
         const player = playerRef.current;
         if (!player) return;
+        holdRef.current = false;
         player.nextVideo();
         player.playVideo();
       },
       previous() {
         const player = playerRef.current;
         if (!player) return;
+        holdRef.current = false;
         player.previousVideo();
+        player.playVideo();
+      },
+      pause() {
+        const player = playerRef.current;
+        if (!player) return;
+        holdRef.current = true;
+        player.pauseVideo();
+      },
+      play() {
+        const player = playerRef.current;
+        if (!player) return;
+        holdRef.current = false;
         player.playVideo();
       },
     }));
@@ -454,15 +489,23 @@ const VideoFrame = memo(
               },
               onStateChange: (event) => {
                 if (!alive) return;
-                if (event.data === PLAYER_PLAYING) {
-                  setPlaying(true);
-                  setError(null);
-                  const title = event.target.getVideoData()?.title ?? "";
-                  if (title) onTitleRef.current(title);
-                  if (event.target.isMuted()) onNeedsSoundRef.current(true);
+                if (event.data === PLAYER_PLAYING || event.data === PLAYER_BUFFERING) {
+                  if (event.data === PLAYER_PLAYING) {
+                    setPlaying(true);
+                    setError(null);
+                    const title = event.target.getVideoData()?.title ?? "";
+                    if (title) onTitleRef.current(title);
+                    if (event.target.isMuted()) onNeedsSoundRef.current(true);
+                  }
+                  onPlaybackRef.current(true);
+                  return;
+                }
+                if (event.data === PLAYER_PAUSED) {
+                  onPlaybackRef.current(false);
                   return;
                 }
                 if (event.data !== PLAYER_ENDED) return;
+                onPlaybackRef.current(false);
                 lateTimers.push(
                   window.setTimeout(() => {
                     if (!alive) return;
@@ -507,6 +550,7 @@ const VideoFrame = memo(
       if (!player) return;
       if (loadedRef.current === playlistId) return;
       loadedRef.current = playlistId;
+      holdRef.current = false;
       setPlaying(false);
       player.loadPlaylist({ list: playlistId, index: 0 });
       player.playVideo();
@@ -518,6 +562,7 @@ const VideoFrame = memo(
         const player = playerRef.current;
         if (!player) return;
         try {
+          if (holdRef.current) return;
           const status = player.getPlayerState();
           const running = status === PLAYER_PLAYING || status === PLAYER_BUFFERING;
           if (!running) {

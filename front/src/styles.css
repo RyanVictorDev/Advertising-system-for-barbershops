@@ -133,8 +133,14 @@ button { cursor: pointer; }
 .scrim {
   position: absolute;
   inset: auto 0 0;
-  height: 62%;
-  background: linear-gradient(to top, var(--scrim-94) 10%, var(--scrim-28) 58%, transparent);
+  height: 78%;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--scrim) 94%, transparent) 0%,
+    color-mix(in srgb, var(--scrim) 84%, transparent) 42%,
+    color-mix(in srgb, var(--scrim) 42%, transparent) 72%,
+    transparent
+  );
 }
 
 .card-copy {
@@ -143,6 +149,17 @@ button { cursor: pointer; }
   right: 0;
   bottom: 0;
   padding: 16px 16px 18px;
+  color: var(--on-photo);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 55%), 0 12px 28px rgb(0 0 0 / 42%);
+}
+
+.card-copy .eyebrow,
+.card-copy .index {
+  color: var(--on-photo-accent);
+}
+
+.card .desc {
+  color: var(--on-photo-dim);
 }
 
 .card h2 {

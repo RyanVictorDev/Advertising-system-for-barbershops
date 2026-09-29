@@ -46,6 +46,9 @@
   --line: color-mix(in srgb, var(--fg) 14%, transparent);
   --cream: var(--fg);
   --cream-dim: var(--fg-dim);
+  --on-photo: #f4efe6;
+  --on-photo-accent: #c6a56a;
+  --on-photo-dim: color-mix(in srgb, var(--on-photo) 78%, transparent);
   --gold: var(--accent);
   --gold-soft: var(--accent-45);
   --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
@@ -163,6 +166,26 @@
   --primary: #eef2f6;
   --on-primary: #12161c;
   --primary-hover: #ffffff;
+}
+
+[data-palette="ouro"] {
+  --on-photo: #f4efe6;
+  --on-photo-accent: #c6a56a;
+}
+
+[data-palette="vinho"] {
+  --on-photo: #f6eeea;
+  --on-photo-accent: #c4818a;
+}
+
+[data-palette="floresta"] {
+  --on-photo: #eef3ee;
+  --on-photo-accent: #8eae86;
+}
+
+[data-palette="oceano"] {
+  --on-photo: #eef2f6;
+  --on-photo-accent: #8aa0bb;
 }
 
 [data-appearance="light"][data-palette="oceano"] {
