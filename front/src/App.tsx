@@ -23,15 +23,8 @@ import { loadYouTubeApi } from "./youtube";
 
 type HouseField = "shopName" | "tagline" | "playlistUrl";
 type HousePatch = Partial<Pick<SalonState, HouseField>>;
-type IssuedCommand = { seq: number; action: PlaybackAction };
 
 const PULSE_MS = 700;
-
-function wait(ms: number) {
-  return new Promise<void>((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
-}
 
 export function App() {
   const [state, setState] = useState<SalonState | null>(null);
@@ -47,7 +40,6 @@ export function App() {
   const flightRef = useRef<Promise<string | null> | null>(null);
   const cursorRef = useRef<number | null>(null);
   const seenUpdatedAtRef = useRef<string | null>(null);
-  const issuedRef = useRef<IssuedCommand[]>([]);
   const gateRef = useRef(Promise.resolve());
   const reportNowPlaying = useCallback((title: string) => {
     setNowPlaying((current) => (current === title ? current : title));
@@ -73,56 +65,30 @@ export function App() {
     return run;
   }, []);
 
-  const applyCommand = useCallback((action: PlaybackAction) => {
-    if (stateRef.current?.live !== true) return true;
+  const followPlayback = useCallback((index: number, paused: boolean) => {
+    if (stateRef.current?.live !== true) return false;
     const player = playerRef.current;
     if (!player) return false;
-    if (action === "pause") return player.pause();
-    if (action === "play") return player.play();
-    if (action === "next") return player.next();
-    if (action === "previous") return player.previous();
+    const ok = player.sync(index, paused);
+    if (!ok) return false;
+    playingRef.current = !paused;
+    setPlaying(!paused);
     return true;
   }, []);
 
-  const absorb = useCallback(
-    async (commands: IssuedCommand[], playbackSeq: number) => {
-      let playing = playingRef.current;
-      let touched = false;
-      let blocked = false;
-      for (const command of commands) {
-        if (cursorRef.current !== null && command.seq <= cursorRef.current) continue;
-        if (!applyCommand(command.action)) {
-          blocked = true;
-          break;
-        }
-        cursorRef.current = command.seq;
-        playing = command.action !== "pause";
-        touched = true;
-        if (command.action === "next" || command.action === "previous") await wait(400);
-      }
-      if (!blocked && cursorRef.current !== null) {
-        cursorRef.current = Math.max(cursorRef.current, playbackSeq);
-      }
-      if (touched) {
-        playingRef.current = playing;
-        setPlaying(playing);
-      }
-      issuedRef.current = issuedRef.current.filter(
-        (command) => cursorRef.current === null || command.seq > cursorRef.current,
-      );
-    },
-    [applyCommand],
-  );
-
   const publish = useCallback(
     (action: PlaybackAction) =>
-      sendPlayback(action).then((issued) => {
-        issuedRef.current = [ ...issuedRef.current, issued ];
-      }),
-    [],
+      sendPlayback(action).then((shot) =>
+        runExclusive(() => {
+          if (!followPlayback(shot.index, shot.paused)) return;
+          cursorRef.current = shot.seq;
+        }),
+      ),
+    [followPlayback, runExclusive],
   );
 
   const togglePlayback = useCallback(() => {
+    playerRef.current?.unmute();
     const next = !playingRef.current;
     const previous = playingRef.current;
     playingRef.current = next;
@@ -137,6 +103,7 @@ export function App() {
 
   const skip = useCallback(
     (direction: "next" | "previous") => {
+      playerRef.current?.unmute();
       playingRef.current = true;
       setPlaying(true);
       void publish(direction).catch(() => undefined);
@@ -179,6 +146,16 @@ export function App() {
   }, [state?.appearance, state?.palette]);
 
   useEffect(() => {
+    const unlock = () => playerRef.current?.unmute();
+    window.addEventListener("pointerdown", unlock);
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!extractPlaylistId(state?.playlistUrl ?? "")) return;
     void loadYouTubeApi().catch(() => undefined);
   }, [state?.playlistUrl]);
@@ -204,28 +181,13 @@ export function App() {
     const tick = async () => {
       if (!stateRef.current) return;
       try {
-        const after = cursorRef.current;
-        const pulse = await fetchPulse(after);
+        const pulse = await fetchPulse();
         if (!alive) return;
-        await runExclusive(async () => {
+        await runExclusive(() => {
           if (!alive) return;
-          if (cursorRef.current === null) {
-            const mine = issuedRef.current
-              .filter((command) => command.seq <= pulse.playbackSeq)
-              .sort((left, right) => left.seq - right.seq);
-            if (mine.length === 0) {
-              cursorRef.current = pulse.playbackSeq;
-              return;
-            }
-            const first = mine[0];
-            if (!first) return;
-            cursorRef.current = first.seq - 1;
-            await absorb(mine, pulse.playbackSeq);
-            return;
-          }
-          if (after === null) return;
-          const pending = pulse.commands.filter((command) => command.seq > (cursorRef.current ?? 0));
-          await absorb(pending, pulse.playbackSeq);
+          if (cursorRef.current === pulse.playbackSeq) return;
+          if (!followPlayback(pulse.playbackIndex, pulse.playbackPaused)) return;
+          cursorRef.current = pulse.playbackSeq;
         });
         if (!alive) return;
         await syncSalon(pulse.updatedAt);
@@ -250,7 +212,7 @@ export function App() {
       alive = false;
       window.clearTimeout(timer);
     };
-  }, [absorb, applyServer, runExclusive]);
+  }, [applyServer, followPlayback, runExclusive]);
 
   const flush = useCallback(async (): Promise<string | null> => {
     if (timerRef.current) {

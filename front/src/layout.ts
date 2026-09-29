@@ -179,10 +179,10 @@ function vitrineScene(width: number, height: number, products: Product[], offset
   if (contentW < 300) return null;
 
   const thumbCount = Math.min(3, Math.max(0, products.length - 1));
-  const thumbH = thumbCount > 0 ? clamp(contentH * 0.28, 132, 248) : 0;
+  const thumbH = thumbCount > 0 ? clamp(contentH * 0.28, 108, 248) : 0;
   const midGap = thumbCount > 0 ? gap : 0;
   const heroH = contentH - thumbH - midGap;
-  if (heroH < 180) return null;
+  if (heroH < 156) return null;
 
   const heroTop = contentTop;
   const videoTop = clamp(
@@ -332,7 +332,7 @@ export function computeScene(
   offset: number,
 ): Scene {
   if (width < 32 || height < 32) return emptyScene(width, height);
-  if (width < 980 || height < 620) return stackScene(width, height, frame, products, offset);
+  if (width < 760 || height < 480) return stackScene(width, height, frame, products, offset);
 
   const scene =
     frame === "cinema"
@@ -340,6 +340,19 @@ export function computeScene(
       : vitrineScene(width, height, products, offset);
 
   return scene ?? stackScene(width, height, frame, products, offset);
+}
+
+export function tvViewportWidth(
+  screenW: number,
+  screenH: number,
+  layoutW: number,
+  outerW: number,
+): number | null {
+  if (screenW < 1200 || screenW <= screenH) return null;
+  if (layoutW <= 0 || layoutW >= 1100) return null;
+  if (screenW / layoutW < 1.35) return null;
+  if (outerW > 0 && outerW < screenW * 0.85) return null;
+  return screenW >= 1920 ? 1920 : Math.round(screenW);
 }
 
 export function toStyle(box: Box): { top: number; left: number; width: number; height: number } {

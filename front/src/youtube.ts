@@ -1,5 +1,7 @@
 export type YouTubePlayer = {
   loadPlaylist: (playlistId: string, index?: number) => void;
+  playVideoAt: (index: number) => void;
+  getPlaylistIndex: () => number;
   playVideo: () => void;
   pauseVideo: () => void;
   nextVideo: () => void;
@@ -28,7 +30,7 @@ type PlayerOptions = {
 declare global {
   interface Window {
     YT?: {
-      Player: new (element: HTMLElement, options: PlayerOptions) => YouTubePlayer;
+      Player: new (element: HTMLElement | string, options: PlayerOptions) => YouTubePlayer;
     };
     onYouTubeIframeAPIReady?: () => void;
   }

@@ -40,15 +40,13 @@ type Phase = "show" | "clear" | "move";
 
 export type VideoHandle = {
   unmute: () => void;
-  next: () => boolean;
-  previous: () => boolean;
-  pause: () => boolean;
-  play: () => boolean;
+  sync: (index: number, paused: boolean) => boolean;
 };
 
 type VideoFrameProps = {
   playlistId: string;
   box: Box;
+  promptSound: boolean;
   onTitle: (title: string) => void;
   onNeedsSound: (needs: boolean) => void;
   onPlayback: (playing: boolean) => void;
@@ -244,6 +242,7 @@ export function Stage({
           ref={playerRef}
           playlistId={playlistId}
           box={scene.video}
+          promptSound={!scene.wide}
           onTitle={onTitle}
           onNeedsSound={setNeedsSound}
           onPlayback={onPlayback}
@@ -272,7 +271,7 @@ export function Stage({
         {adminOpen ? null : <Now />}
       </header>
 
-      {needsSound && !adminOpen ? (
+      {needsSound && !adminOpen && !scene.wide ? (
         <button type="button" className="sound" onClick={enableSound}>
           Ativar som
         </button>
@@ -390,9 +389,52 @@ function VoidPanel({ spot, shop, tagline }: { spot: VoidSpot; shop: string; tagl
   );
 }
 
+function running(player: YouTubePlayer) {
+  try {
+    const status = player.getPlayerState();
+    return status === PLAYER_PLAYING || status === PLAYER_BUFFERING;
+  } catch {
+    return false;
+  }
+}
+
+function withSound(player: YouTubePlayer) {
+  player.unMute();
+  player.setVolume(80);
+}
+
+function youtubeEmbed(playlistId: string, index = 0, reload = 0) {
+  const params = new URLSearchParams({
+    list: playlistId,
+    index: String(index),
+    autoplay: "1",
+    mute: "1",
+    enablejsapi: "1",
+    controls: "0",
+    rel: "0",
+    modestbranding: "1",
+    playsinline: "1",
+    iv_load_policy: "3",
+    disablekb: "1",
+    fs: "0",
+    origin: window.location.origin,
+  });
+  if (reload) params.set("_", String(reload));
+  return `https://www.youtube.com/embed/videoseries?${params.toString()}`;
+}
+
+function isTelevision() {
+  if (/smart-?tv|smarttv|tizen|web0s|webos|hbbtv|netcast|viera|bravia|googletv|appletv|crkey|inettv|philipstv|aftb|aftm|aftt|afts|nettv/i.test(navigator.userAgent)) {
+    return true;
+  }
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const noHover = window.matchMedia("(hover: none)").matches;
+  return coarse && noHover && window.screen.width >= 1000 && window.innerWidth >= 760;
+}
+
 const VideoFrame = memo(
   forwardRef<VideoHandle, VideoFrameProps>(function VideoFrame(
-    { playlistId, box, onTitle, onNeedsSound, onPlayback },
+    { playlistId, box, promptSound, onTitle, onNeedsSound, onPlayback },
     ref,
   ) {
     const shellRef = useRef<HTMLDivElement>(null);
@@ -400,12 +442,50 @@ const VideoFrame = memo(
     const playlistRef = useRef(playlistId);
     const loadedRef = useRef<string | null>(null);
     const holdRef = useRef(false);
+    const aimedRef = useRef<number | null>(null);
+    const startedRef = useRef(false);
+    const gestureRef = useRef(false);
+    const televisionRef = useRef(isTelevision());
+    const posterRef = useRef<HTMLButtonElement>(null);
+    const soundTries = useRef(0);
+    const reloadsRef = useRef(0);
+    const shownAt = useRef(Date.now());
+    const promptSoundRef = useRef(promptSound);
     const onTitleRef = useRef(onTitle);
     const onNeedsSoundRef = useRef(onNeedsSound);
     const onPlaybackRef = useRef(onPlayback);
+    promptSoundRef.current = promptSound;
     const [playing, setPlaying] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [ready, setReady] = useState(false);
+    const [hint, setHint] = useState(false);
+
+    const showOnTv = useCallback((index: number, reload = 0) => {
+      const frame = shellRef.current?.querySelector("iframe");
+      if (!(frame instanceof HTMLIFrameElement)) return false;
+      shownAt.current = Date.now();
+      frame.src = youtubeEmbed(playlistRef.current, index, reload);
+      return true;
+    }, []);
+
+    const begin = useCallback(() => {
+      gestureRef.current = true;
+      const player = playerRef.current;
+      if (!player) return;
+      try {
+        player.setVolume(80);
+        player.unMute();
+        if (televisionRef.current) {
+          if (!running(player) && aimedRef.current !== null) showOnTv(aimedRef.current, Date.now());
+          else player.playVideo();
+          return;
+        }
+        if (aimedRef.current !== null) player.playVideoAt(aimedRef.current);
+        else player.playVideo();
+      } catch {
+        return;
+      }
+    }, [showOnTv]);
 
     playlistRef.current = playlistId;
     onTitleRef.current = onTitle;
@@ -416,48 +496,77 @@ const VideoFrame = memo(
       unmute() {
         const player = playerRef.current;
         if (!player) return;
-        holdRef.current = false;
         player.unMute();
         player.setVolume(80);
-        player.playVideo();
+        if (!televisionRef.current || holdRef.current) return;
+        try {
+          player.playVideo();
+        } catch {
+          return;
+        }
       },
-      next() {
+      sync(index, paused) {
         const player = playerRef.current;
         if (!player) return false;
-        holdRef.current = false;
-        player.nextVideo();
-        player.playVideo();
-        return true;
-      },
-      previous() {
-        const player = playerRef.current;
-        if (!player) return false;
-        holdRef.current = false;
-        player.previousVideo();
-        player.playVideo();
-        return true;
-      },
-      pause() {
-        const player = playerRef.current;
-        if (!player) return false;
-        holdRef.current = true;
-        player.pauseVideo();
-        return true;
-      },
-      play() {
-        const player = playerRef.current;
-        if (!player) return false;
-        holdRef.current = false;
-        player.playVideo();
-        return true;
+        holdRef.current = paused;
+        if (televisionRef.current) {
+          if (aimedRef.current !== index) {
+            const first = aimedRef.current === null;
+            aimedRef.current = index;
+            reloadsRef.current = 0;
+            soundTries.current = 0;
+            if (!first || index !== 0) showOnTv(index);
+          } else if (startedRef.current && paused) {
+            try {
+              player.pauseVideo();
+            } catch {
+              return false;
+            }
+          } else if (startedRef.current && !paused && !running(player)) {
+            try {
+              player.playVideo();
+            } catch {
+              return false;
+            }
+          }
+          return true;
+        }
+        let at = -1;
+        try {
+          at = player.getPlaylistIndex();
+        } catch {
+          at = -1;
+        }
+        try {
+          if (at !== index && aimedRef.current !== index) {
+            player.playVideoAt(index);
+            aimedRef.current = index;
+          } else if (!running(player)) {
+            player.playVideo();
+          } else if (!paused) {
+            withSound(player);
+          }
+          if (paused && startedRef.current) player.pauseVideo();
+          return true;
+        } catch {
+          return false;
+        }
       },
     }));
 
     useEffect(() => {
       const shell = shellRef.current;
       if (!shell) return undefined;
-      const mount = document.createElement("div");
+      const television = televisionRef.current;
+      const mount = document.createElement(television ? "iframe" : "div");
       mount.className = "video-mount";
+      mount.id = "salon-player";
+      if (mount instanceof HTMLIFrameElement) {
+        mount.allow = "autoplay; encrypted-media; picture-in-picture";
+        mount.title = "Playlist do salão";
+        mount.src = youtubeEmbed(playlistRef.current);
+        shownAt.current = Date.now();
+      }
       shell.appendChild(mount);
       let alive = true;
       let player: YouTubePlayer | null = null;
@@ -466,41 +575,42 @@ const VideoFrame = memo(
       loadYouTubeApi()
         .then(() => {
           if (!alive || !window.YT?.Player) return;
-          player = new window.YT.Player(mount, {
-            width: "100%",
-            height: "100%",
-            playerVars: {
-              autoplay: 1,
-              controls: 0,
-              disablekb: 1,
-              fs: 0,
-              modestbranding: 1,
-              rel: 0,
-              iv_load_policy: 3,
-              playsinline: 1,
-              listType: "playlist",
-              list: playlistRef.current,
-              origin: window.location.origin,
-            },
-            events: {
-              onReady: (event) => {
+          const events = {
+              onReady: (event: { target: YouTubePlayer }) => {
                 if (!alive) return;
                 playerRef.current = event.target;
                 loadedRef.current = playlistRef.current;
-                event.target.unMute();
-                event.target.setVolume(80);
-                event.target.playVideo();
+                const frame = shellRef.current?.querySelector("iframe");
+                if (frame) frame.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
+                if (televisionRef.current) {
+                  if (gestureRef.current) {
+                    event.target.unMute();
+                    event.target.setVolume(80);
+                    event.target.playVideo();
+                  }
+                } else {
+                  event.target.setVolume(80);
+                  event.target.playVideo();
+                }
                 setReady(true);
               },
               onStateChange: (event) => {
                 if (!alive) return;
                 if (event.data === PLAYER_PLAYING || event.data === PLAYER_BUFFERING) {
                   if (event.data === PLAYER_PLAYING) {
+                    startedRef.current = true;
                     setPlaying(true);
                     setError(null);
                     const title = event.target.getVideoData()?.title ?? "";
                     if (title) onTitleRef.current(title);
-                    if (event.target.isMuted()) onNeedsSoundRef.current(true);
+                    if (holdRef.current) {
+                      event.target.pauseVideo();
+                      return;
+                    }
+                    if (!televisionRef.current && event.target.isMuted() && soundTries.current < 12) {
+                      soundTries.current += 1;
+                      withSound(event.target);
+                    }
                   }
                   onPlaybackRef.current(true);
                   return;
@@ -509,14 +619,15 @@ const VideoFrame = memo(
                   onPlaybackRef.current(false);
                   return;
                 }
-                if (event.data !== PLAYER_ENDED) return;
+                if (event.data !== PLAYER_ENDED || televisionRef.current) return;
                 onPlaybackRef.current(false);
                 lateTimers.push(
                   window.setTimeout(() => {
                     if (!alive) return;
                     const current = playerRef.current;
                     if (!current || current.getPlayerState() !== PLAYER_ENDED) return;
-                    current.loadPlaylist(playlistRef.current, 0);
+                    const index = current.getPlaylistIndex();
+                    current.playVideoAt(index >= 0 ? index : 0);
                   }, 800),
                 );
               },
@@ -528,8 +639,30 @@ const VideoFrame = memo(
                 }
                 setError("Não consegui abrir esta playlist.");
               },
-            },
-          });
+          };
+          player = new window.YT.Player(
+            television ? mount.id : mount,
+            television
+              ? { events }
+              : {
+                  width: "100%",
+                  height: "100%",
+                  playerVars: {
+                    autoplay: 1,
+                    controls: 0,
+                    disablekb: 1,
+                    fs: 0,
+                    modestbranding: 1,
+                    rel: 0,
+                    iv_load_policy: 3,
+                    playsinline: 1,
+                    listType: "playlist",
+                    list: playlistRef.current,
+                    origin: window.location.origin,
+                  },
+                  events,
+                },
+          );
         })
         .catch(() => {
           if (alive) setError("O YouTube não respondeu. Confira a conexão e tente de novo.");
@@ -561,27 +694,124 @@ const VideoFrame = memo(
     }, [playlistId, ready]);
 
     useEffect(() => {
-      if (!ready) return undefined;
-      const id = window.setTimeout(() => {
+      if (playing || error || !televisionRef.current) return undefined;
+      const id = window.setTimeout(() => setHint(true), 4000);
+      return () => window.clearTimeout(id);
+    }, [playing, error]);
+
+    useEffect(() => {
+      if (playing || error) return;
+      const node = posterRef.current;
+      if (!node || !televisionRef.current) return;
+      const active = document.activeElement;
+      if (active === document.body || active === document.documentElement || active === null) {
+        node.focus({ preventScroll: true });
+      }
+    }, [playing, error, ready]);
+
+    useEffect(() => {
+      const onKey = (event: KeyboardEvent) => {
+        if (!televisionRef.current) return;
+        const target = event.target;
+        if (target instanceof HTMLElement) {
+          const tag = target.tagName;
+          if (tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable) return;
+        }
+        if (event.key === "g" || event.key === "G" || event.key === "f" || event.key === "F" || event.key === "Escape") return;
+        if (!startedRef.current) {
+          begin();
+          return;
+        }
         const player = playerRef.current;
         if (!player) return;
         try {
-          if (holdRef.current) return;
-          const status = player.getPlayerState();
-          const running = status === PLAYER_PLAYING || status === PLAYER_BUFFERING;
-          if (!running) {
-            player.mute();
+          if (player.isMuted()) withSound(player);
+        } catch {
+          return;
+        }
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [begin]);
+
+    useEffect(() => {
+      if (!ready) return undefined;
+      let waits = 0;
+      const id = window.setInterval(() => {
+        if (startedRef.current || televisionRef.current) return;
+        const player = playerRef.current;
+        if (!player) return;
+        waits += 1;
+        if (waits > 8) return;
+        if (waits < 3) return;
+        try {
+          if (running(player)) return;
+          if (!gestureRef.current && !player.isMuted()) player.mute();
+          if (aimedRef.current !== null) player.playVideoAt(aimedRef.current);
+          else player.playVideo();
+        } catch {
+          return;
+        }
+      }, 1000);
+      return () => window.clearInterval(id);
+    }, [ready]);
+
+    useEffect(() => {
+      if (!ready) return undefined;
+      const id = window.setInterval(() => {
+        const player = playerRef.current;
+        if (!player || !startedRef.current || holdRef.current || televisionRef.current) return;
+        try {
+          if (!running(player)) {
             player.playVideo();
-            onNeedsSoundRef.current(true);
             return;
           }
-          if (player.isMuted()) onNeedsSoundRef.current(true);
+          if (!player.isMuted()) {
+            if (promptSoundRef.current) onNeedsSoundRef.current(false);
+            return;
+          }
+          if (soundTries.current >= 12) {
+            if (promptSoundRef.current) onNeedsSoundRef.current(true);
+            return;
+          }
+          soundTries.current += 1;
+          withSound(player);
         } catch {
-          onNeedsSoundRef.current(true);
+          return;
         }
-      }, 1800);
-      return () => window.clearTimeout(id);
+      }, 1000);
+      return () => window.clearInterval(id);
     }, [ready]);
+
+    useEffect(() => {
+      if (!ready || !televisionRef.current) return undefined;
+      const id = window.setInterval(() => {
+        const player = playerRef.current;
+        if (!player || !startedRef.current || holdRef.current) return;
+        if (Date.now() - shownAt.current < 4000) return;
+        let live = false;
+        try {
+          live = running(player);
+        } catch {
+          return;
+        }
+        if (!live) {
+          if (reloadsRef.current >= 2 || aimedRef.current === null) return;
+          reloadsRef.current += 1;
+          showOnTv(aimedRef.current, Date.now());
+          return;
+        }
+        if (!player.isMuted() || soundTries.current >= 1) return;
+        soundTries.current += 1;
+        try {
+          withSound(player);
+          player.playVideo();
+        } catch {
+          return;
+        }
+      }, 1200);
+      return () => window.clearInterval(id);
+    }, [ready, showOnTv]);
 
     return (
       <div className="video-frame" style={toStyle(box)}>
@@ -590,9 +820,18 @@ const VideoFrame = memo(
         <span className="corner tr" />
         <span className="corner bl" />
         <span className="corner br" />
-        <div className={playing && !error ? "poster is-gone" : "poster"}>
-          <p>{error ?? "A sessão vai começar"}</p>
-        </div>
+        <button
+          ref={posterRef}
+          type="button"
+          className={playing && !error ? "poster is-gone" : "poster"}
+          tabIndex={playing ? -1 : 0}
+          onClick={begin}
+        >
+          <span className="poster-copy">
+            <p>{error ?? "A sessão vai começar"}</p>
+            {hint && !playing && !error ? <small>Aperte OK no controle</small> : null}
+          </span>
+        </button>
       </div>
     );
   }),

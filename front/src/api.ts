@@ -174,31 +174,34 @@ export async function selectPlaylist(id: string): Promise<SalonState> {
 export type Pulse = {
   updatedAt: string;
   playbackSeq: number;
-  commands: Array<{ seq: number; action: PlaybackAction }>;
+  playbackIndex: number;
+  playbackPaused: boolean;
 };
 
-export async function fetchPulse(after: number | null): Promise<Pulse> {
-  const path = after === null ? "/api/pulse" : `/api/pulse?after=${String(after)}`;
-  const response = await request(path);
+export async function fetchPulse(): Promise<Pulse> {
+  const response = await request("/api/pulse");
   if (!response.ok) throw new ApiError(await readError(response));
   const body = (await response.json()) as {
     updated_at: string;
     playback_seq: number;
-    commands: Array<{ seq: number; action: PlaybackAction }>;
+    playback_index: number;
+    playback_paused: boolean;
   };
   return {
     updatedAt: body.updated_at,
     playbackSeq: body.playback_seq,
-    commands: body.commands ?? [],
+    playbackIndex: body.playback_index,
+    playbackPaused: body.playback_paused,
   };
 }
 
-export async function sendPlayback(action: PlaybackAction): Promise<{ seq: number; action: PlaybackAction }> {
+export async function sendPlayback(action: PlaybackAction): Promise<{ seq: number; index: number; paused: boolean }> {
   const response = await request("/api/playback", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ playback: { action } }),
   });
   if (!response.ok) throw new ApiError(await readError(response));
-  return (await response.json()) as { seq: number; action: PlaybackAction };
+  const body = (await response.json()) as { seq: number; index: number; paused: boolean };
+  return { seq: body.seq, index: body.index, paused: body.paused };
 }

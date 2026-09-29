@@ -341,12 +341,23 @@ button { cursor: pointer; }
   z-index: 3;
   display: grid;
   place-items: center;
+  width: 100%;
+  border: 0;
   padding: 24px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
   background:
     radial-gradient(ellipse at 50% 40%, var(--accent-08), transparent 55%),
     var(--bg);
   text-align: center;
   transition: opacity 0.6s ease;
+}
+
+.poster-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .poster p {
@@ -355,6 +366,21 @@ button { cursor: pointer; }
   font-family: var(--serif);
   font-style: italic;
   font-size: clamp(22px, 4vw, 36px);
+}
+
+.poster small {
+  margin-top: 16px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.poster:focus-visible {
+  outline: 1px solid var(--fg-16);
+  outline-offset: -16px;
 }
 
 .poster.is-gone {

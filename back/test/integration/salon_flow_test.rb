@@ -64,12 +64,13 @@ class SalonFlowTest < ActionDispatch::IntegrationTest
     assert_equal PLAYLIST, JSON.parse(response.body)["playlist_url"]
   end
 
-  test "playback commands reach every open screen once" do
+  test "screens share the song and the pause state" do
     get api_pulse_path
     assert_response :success
     opened = JSON.parse(response.body)
-    assert_equal [], opened["commands"]
     assert_equal 0, opened["playback_seq"]
+    assert_equal 0, opened["playback_index"]
+    assert_equal false, opened["playback_paused"]
     assert opened["updated_at"].present?
 
     post api_playback_path, params: { playback: { action: "nope" } }, as: :json
@@ -81,42 +82,47 @@ class SalonFlowTest < ActionDispatch::IntegrationTest
       assert_response :success
     end
 
-    get api_pulse_path, params: { after: opened["playback_seq"] }
+    get api_pulse_path
     assert_response :success
     body = JSON.parse(response.body)
-    assert_equal %w[next next pause], body["commands"].map { |item| item["action"] }
+    assert_equal 2, body["playback_index"]
+    assert_equal true, body["playback_paused"]
     assert_equal 3, body["playback_seq"]
 
-    get api_pulse_path, params: { after: body["playback_seq"] }
-    assert_equal [], JSON.parse(response.body)["commands"]
+    post api_playback_path, params: { playback: { action: "play" } }, as: :json
+    assert_response :success
+    resumed = JSON.parse(response.body)
+    assert_equal 2, resumed["index"]
+    assert_equal false, resumed["paused"]
+
+    post api_playback_path, params: { playback: { action: "previous" } }, as: :json
+    assert_equal 1, JSON.parse(response.body)["index"]
 
     patch api_salon_path, params: { salon: { name: "Casa Pulso" } }, as: :json
     assert_response :success
-    get api_pulse_path, params: { after: body["playback_seq"] }
+    get api_pulse_path
     assert_not_equal opened["updated_at"], JSON.parse(response.body)["updated_at"]
+    assert_equal 1, JSON.parse(response.body)["playback_index"]
   end
 
-  test "a playback command expires so a new screen does not replay it" do
-    post api_playback_path, params: { playback: { action: "next" } }, as: :json
-    assert_response :success
-    seq = JSON.parse(response.body)["seq"]
-
-    travel 30.seconds do
-      get api_pulse_path, params: { after: seq - 1 }
+  test "a new screen joins the current song and a new playlist rewinds it" do
+    3.times do
+      post api_playback_path, params: { playback: { action: "next" } }, as: :json
       assert_response :success
-      body = JSON.parse(response.body)
-      assert_equal [], body["commands"]
-      assert_equal seq, body["playback_seq"]
     end
 
     get api_pulse_path
-    assert_equal [], JSON.parse(response.body)["commands"]
-  end
+    assert_equal 3, JSON.parse(response.body)["playback_index"]
 
-  test "a pulse refuses a position that is not a number" do
-    get api_pulse_path, params: { after: "depois" }
-    assert_response :unprocessable_entity
-    assert_includes JSON.parse(response.body)["errors"], "Não entendi a posição da reprodução."
+    patch api_salon_path, params: { salon: { playlist_url: PLAYLIST } }, as: :json
+    assert_response :success
+    get api_pulse_path
+    body = JSON.parse(response.body)
+    assert_equal 0, body["playback_index"]
+    assert_equal false, body["playback_paused"]
+
+    post api_playback_path, params: { playback: { action: "previous" } }, as: :json
+    assert_equal 0, JSON.parse(response.body)["index"]
   end
 
   test "history is capped at the twenty most recent" do

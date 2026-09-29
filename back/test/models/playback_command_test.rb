@@ -1,12 +1,16 @@
 require "test_helper"
 
 class PlaybackCommandTest < ActiveSupport::TestCase
-  test "only the recent commands stay stored" do
+  test "previous stays on the first song" do
     shop = Shop.current
-    (PlaybackCommand::KEEP + 1).times { PlaybackCommand.issue!(shop, "next") }
+    shop.advance_playback!("previous")
+    assert_equal 0, shop.playback_index
+    assert_equal false, shop.playback_paused
 
-    stored = PlaybackCommand.where(shop: shop)
-    assert_equal PlaybackCommand::KEEP, stored.count
-    assert_equal PlaybackCommand::KEEP + 1, stored.maximum(:seq)
+    shop.advance_playback!("next")
+    shop.advance_playback!("pause")
+    shop.advance_playback!("previous")
+    assert_equal 0, shop.playback_index
+    assert_equal false, shop.playback_paused
   end
 end

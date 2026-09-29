@@ -6,8 +6,11 @@ class Shop < ApplicationRecord
   has_many :playlists, dependent: :destroy
   has_many :playback_commands, dependent: :destroy
 
+  PLAYBACK_ACTIONS = %w[pause play next previous].freeze
+
   before_validation :normalize_text
   after_save :remember_playlist, if: :saved_change_to_playlist_url?
+  after_save :rewind_playback, if: :saved_change_to_playlist_url?
 
   validates :name, length: { maximum: 42 }
   validates :tagline, length: { maximum: 42 }
@@ -24,6 +27,28 @@ class Shop < ApplicationRecord
 
   def revision_stamp
     updated_at.iso8601(6)
+  end
+
+  def advance_playback!(action)
+    with_lock do
+      case action
+      when "next"
+        self.playback_index += 1
+        self.playback_paused = false
+      when "previous"
+        self.playback_index = [ playback_index - 1, 0 ].max
+        self.playback_paused = false
+      when "pause"
+        self.playback_paused = true
+      when "play"
+        self.playback_paused = false
+      else
+        raise ArgumentError, action
+      end
+      self.playback_seq += 1
+      save!
+    end
+    self
   end
 
   private
@@ -50,6 +75,18 @@ class Shop < ApplicationRecord
       return if Youtube::PlaylistId.extract(playlist_url)
 
       errors.add(:base, "Cole o link de uma playlist para abrir.")
+    end
+
+    def rewind_playback
+      previous, = saved_change_to_playlist_url
+      return if previous.blank? && playback_index.zero? && !playback_paused?
+
+      update_columns(
+        playback_index: 0,
+        playback_paused: false,
+        playback_seq: playback_seq + 1,
+        updated_at: Time.current
+      )
     end
 
     def remember_playlist
