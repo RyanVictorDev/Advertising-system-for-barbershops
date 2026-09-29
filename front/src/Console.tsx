@@ -295,7 +295,7 @@ function SalonFields({
               : "Playlist reconhecida. Os vídeos entram um após o outro."}
           </p>
         ) : null}
-        <label htmlFor={playlistQueryId}>Playlists desta casa</label>
+        <label htmlFor={playlistQueryId} className="history-label">Histórico de playlists</label>
         <input
           id={playlistQueryId}
           value={playlistQuery}

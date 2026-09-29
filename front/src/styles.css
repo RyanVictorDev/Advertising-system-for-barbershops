@@ -882,19 +882,36 @@ button { cursor: pointer; }
 .btn-danger { background: var(--danger); color: #1a1612; }
 .btn-danger:disabled { cursor: not-allowed; opacity: 0.45; }
 
+.fields label.history-label {
+  margin-top: 26px;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 .playlist-history {
+  max-height: 210px;
   margin: 8px 0 0;
-  padding: 0;
+  padding: 0 12px;
+  overflow-y: auto;
   list-style: none;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  scrollbar-width: thin;
+  scrollbar-color: var(--gold-soft) transparent;
 }
 
 .playlist-history li { border-bottom: 1px solid var(--line); }
+.playlist-history li:last-child { border-bottom: 0; }
 
 .playlist-history button {
   display: block;
+  box-sizing: border-box;
   width: 100%;
+  height: 68px;
   min-width: 0;
-  padding: 12px 0;
+  padding: 10px 0;
   border: 0;
   background: none;
   color: var(--cream);
@@ -907,7 +924,12 @@ button { cursor: pointer; }
 
 .playlist-history button.is-current { color: var(--gold); }
 
-.playlist-history .playlist-title { display: block; }
+.playlist-history .playlist-title {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 
 .playlist-history .playlist-link {
   display: block;
