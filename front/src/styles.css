@@ -1,16 +1,3 @@
-:root {
-  color-scheme: dark;
-  --bg: #0c0b09;
-  --cream: #f4efe6;
-  --cream-dim: rgba(244, 239, 230, 0.72);
-  --gold: #c6a56a;
-  --gold-soft: rgba(198, 165, 106, 0.45);
-  --line: rgba(244, 239, 230, 0.14);
-  --danger: #d7a094;
-  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --sans: "Outfit", "Segoe UI", sans-serif;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
-}
 
 * { box-sizing: border-box; }
 
@@ -31,7 +18,7 @@ button, input, textarea { font: inherit; color: inherit; }
 
 button { cursor: pointer; }
 
-::selection { background: rgba(198, 165, 106, 0.35); }
+::selection { background: var(--accent-35); }
 
 :focus-visible {
   outline: 1px solid var(--gold);
@@ -66,7 +53,7 @@ button { cursor: pointer; }
   content: "";
   position: absolute;
   inset: 14px;
-  border: 1px solid rgba(198, 165, 106, 0.22);
+  border: 1px solid var(--accent-22);
   pointer-events: none;
   z-index: 48;
 }
@@ -80,15 +67,15 @@ button { cursor: pointer; }
 
 .atmosphere-cinema {
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(198, 165, 106, 0.09), transparent 46%),
-    radial-gradient(ellipse at 50% 100%, rgba(70, 32, 24, 0.18), transparent 42%),
+    radial-gradient(ellipse at 50% 0%, var(--accent-09), transparent 46%),
+    radial-gradient(ellipse at 50% 100%, var(--shade-18), transparent 42%),
     var(--bg);
 }
 
 .atmosphere-vitrine {
   background:
-    radial-gradient(ellipse at 78% 30%, rgba(198, 165, 106, 0.12), transparent 42%),
-    radial-gradient(ellipse at 8% 80%, rgba(70, 32, 24, 0.2), transparent 40%),
+    radial-gradient(ellipse at 78% 30%, var(--accent-12), transparent 42%),
+    radial-gradient(ellipse at 8% 80%, var(--shade-20), transparent 40%),
     var(--bg);
 }
 
@@ -123,7 +110,7 @@ button { cursor: pointer; }
 
 .card {
   overflow: hidden;
-  background: #14110e;
+  background: var(--surface);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   container-type: size;
   color: var(--cream);
@@ -147,7 +134,7 @@ button { cursor: pointer; }
   position: absolute;
   inset: auto 0 0;
   height: 62%;
-  background: linear-gradient(to top, rgba(8, 7, 6, 0.94) 10%, rgba(8, 7, 6, 0.28) 58%, transparent);
+  background: linear-gradient(to top, var(--scrim-94) 10%, var(--scrim-28) 58%, transparent);
 }
 
 .card-copy {
@@ -231,8 +218,8 @@ button { cursor: pointer; }
   gap: 16px;
   padding: 22px 18px 24px;
   background:
-    radial-gradient(ellipse at 10% 0%, rgba(198, 165, 106, 0.2), transparent 55%),
-    #14110e;
+    radial-gradient(ellipse at 10% 0%, var(--accent-20), transparent 55%),
+    var(--surface);
 }
 
 .quote-text {
@@ -273,7 +260,7 @@ button { cursor: pointer; }
   font-style: italic;
   font-size: clamp(20px, 8cqh, 36px);
   line-height: 1.15;
-  color: rgba(244, 239, 230, 0.82);
+  color: var(--fg-82);
 }
 
 .monogram {
@@ -282,12 +269,12 @@ button { cursor: pointer; }
   font-size: clamp(72px, 42cqh, 200px);
   line-height: 0.8;
   letter-spacing: 0.04em;
-  color: rgba(198, 165, 106, 0.34);
+  color: var(--accent-34);
 }
 
 .video-frame {
   z-index: 30;
-  background: #050504;
+  background: var(--stage);
   overflow: hidden;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
   transition:
@@ -303,7 +290,7 @@ button { cursor: pointer; }
   inset: 0;
   z-index: 4;
   pointer-events: none;
-  border: 1px solid rgba(244, 239, 230, 0.16);
+  border: 1px solid var(--fg-16);
 }
 
 .video-host-slot { position: absolute; inset: 0; }
@@ -339,8 +326,8 @@ button { cursor: pointer; }
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(198, 165, 106, 0.08), transparent 55%),
-    #0c0b09;
+    radial-gradient(ellipse at 50% 40%, var(--accent-08), transparent 55%),
+    var(--bg);
   text-align: center;
   transition: opacity 0.6s ease;
 }
@@ -400,7 +387,7 @@ button { cursor: pointer; }
   width: 1px;
   z-index: 12;
   pointer-events: none;
-  background: linear-gradient(to bottom, transparent, rgba(198, 165, 106, 0.75), transparent);
+  background: linear-gradient(to bottom, transparent, var(--accent-75), transparent);
 }
 
 .topbar {
@@ -485,7 +472,7 @@ button { cursor: pointer; }
   z-index: 47;
   padding: 7px 12px;
   border: 1px solid var(--gold-soft);
-  background: rgba(12, 11, 9, 0.82);
+  background: var(--bg-82);
   color: var(--gold);
   font-size: 11px;
   letter-spacing: 0.18em;
@@ -503,7 +490,7 @@ button { cursor: pointer; }
   left: 0;
   z-index: 46;
   margin: 0;
-  color: rgba(244, 239, 230, 0.38);
+  color: var(--fg-38);
   font-size: 10px;
   letter-spacing: 0.28em;
   text-align: center;
@@ -546,10 +533,10 @@ button { cursor: pointer; }
   left: var(--drawer-left, 46vw);
   overflow: auto;
   background:
-    radial-gradient(ellipse at 0% 0%, rgba(198, 165, 106, 0.08), transparent 40%),
-    #100e0c;
-  border-left: 1px solid rgba(198, 165, 106, 0.28);
-  scrollbar-color: rgba(198, 165, 106, 0.45) transparent;
+    radial-gradient(ellipse at 0% 0%, var(--accent-08), transparent 40%),
+    var(--surface);
+  border-left: 1px solid var(--accent-28);
+  scrollbar-color: var(--accent-45) transparent;
 }
 
 .drawer-inner {
@@ -605,7 +592,7 @@ button { cursor: pointer; }
   grid-template-columns: minmax(300px, 1fr) minmax(340px, 620px);
   min-height: 100vh;
   background:
-    radial-gradient(ellipse at 15% 0%, rgba(198, 165, 106, 0.1), transparent 42%),
+    radial-gradient(ellipse at 15% 0%, var(--accent-10), transparent 42%),
     var(--bg);
 }
 
@@ -628,7 +615,7 @@ button { cursor: pointer; }
   font-family: var(--serif);
   font-size: min(22vw, 280px);
   line-height: 0.8;
-  color: rgba(198, 165, 106, 0.1);
+  color: var(--accent-10);
   pointer-events: none;
 }
 
@@ -682,14 +669,14 @@ button { cursor: pointer; }
   height: 92px;
   gap: 6px;
   padding: 8px;
-  border: 1px solid rgba(198, 165, 106, 0.35);
+  border: 1px solid var(--accent-35);
 }
 
 .mini-cinema { grid-template-columns: 0.7fr 1.8fr 0.7fr; }
 .mini-vitrine { grid-template-columns: 0.8fr 1.5fr; }
 
 .mini i, .mini b { display: block; height: 100%; }
-.mini i { background: rgba(244, 239, 230, 0.08); }
+.mini i { background: var(--fg-08); }
 .mini b { background: var(--gold); }
 
 .console-form, .fields section { min-width: 0; }
@@ -706,6 +693,46 @@ button { cursor: pointer; }
   font-size: 11px;
 }
 
+.theme-modes,
+.theme-palettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.theme-modes { margin-top: 4px; }
+
+.theme-palettes { margin-top: 10px; }
+
+.theme-modes button,
+.theme-palettes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  padding: 10px 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.theme-palettes button { letter-spacing: 0.06em; }
+
+.theme-modes button.is-on,
+.theme-palettes button.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 25%, transparent);
+}
+
 .section-note {
   margin: 0 0 16px;
   color: var(--cream-dim);
@@ -716,7 +743,7 @@ button { cursor: pointer; }
 .fields label:not(.photo-drop) {
   display: block;
   margin: 16px 0 0;
-  color: rgba(244, 239, 230, 0.55);
+  color: var(--fg-55);
   font-size: 12px;
   letter-spacing: 0.08em;
 }
@@ -725,7 +752,7 @@ button { cursor: pointer; }
   width: 100%;
   padding: 10px 0 12px;
   border: 0;
-  border-bottom: 1px solid rgba(244, 239, 230, 0.2);
+  border-bottom: 1px solid var(--fg-20);
   border-radius: 0;
   background: transparent;
 }
@@ -745,12 +772,12 @@ button { cursor: pointer; }
   min-height: 160px;
   margin-top: 8px;
   overflow: hidden;
-  border: 1px dashed rgba(198, 165, 106, 0.45);
+  border: 1px dashed var(--accent-45);
   background: rgba(255, 255, 255, 0.02);
   cursor: pointer;
 }
 
-.photo-drop.is-drag { border-color: var(--gold); background: rgba(198, 165, 106, 0.08); }
+.photo-drop.is-drag { border-color: var(--gold); background: var(--accent-08); }
 
 .photo-drop input {
   position: absolute;
@@ -783,8 +810,8 @@ button { cursor: pointer; }
   font-size: 12px;
 }
 
-.btn-primary { background: var(--cream); color: #1a1612; }
-.btn-primary:hover { background: #fff; }
+.btn-primary { background: var(--primary); color: var(--on-primary); }
+.btn-primary:hover { background: var(--primary-hover); }
 .btn-primary:disabled { cursor: not-allowed; opacity: 0.4; }
 .btn-ghost { border-color: var(--gold-soft); color: var(--cream); }
 .btn-text { padding-inline: 8px; color: var(--cream-dim); letter-spacing: 0.12em; }
@@ -794,7 +821,7 @@ button { cursor: pointer; }
   color: var(--cream);
   padding: 16px 22px;
 }
-.btn-end:hover { background: rgba(198, 165, 106, 0.16); }
+.btn-end:hover { background: var(--accent-16); }
 
 .product-list {
   margin: 22px 0 0;
@@ -810,7 +837,7 @@ button { cursor: pointer; }
   border-bottom: 1px solid var(--line);
 }
 
-.product-list li.is-editing { background: rgba(198, 165, 106, 0.06); }
+.product-list li.is-editing { background: var(--accent-06); }
 
 .product-list img { width: 72px; height: 72px; object-fit: cover; }
 
@@ -850,12 +877,12 @@ button { cursor: pointer; }
   width: min(420px, calc(100vw - 48px));
   margin: auto;
   padding: 28px 28px 22px;
-  border: 1px solid rgba(198, 165, 106, 0.35);
-  background: #14120f;
+  border: 1px solid var(--accent-35);
+  background: var(--surface);
   color: var(--cream);
 }
 
-.confirm::backdrop { background: rgba(12, 11, 9, 0.72); }
+.confirm::backdrop { background: var(--bg-72); }
 
 .confirm h2 {
   margin: 8px 0 0;
@@ -879,7 +906,7 @@ button { cursor: pointer; }
   margin-top: 24px;
 }
 
-.btn-danger { background: var(--danger); color: #1a1612; }
+.btn-danger { background: var(--danger); color: var(--on-danger); }
 .btn-danger:disabled { cursor: not-allowed; opacity: 0.45; }
 
 .fields label.history-label {
@@ -972,7 +999,7 @@ button { cursor: pointer; }
     min-height: 44px;
     padding: 12px 18px;
     border: 1px solid var(--gold);
-    background: rgba(12, 11, 9, 0.92);
+    background: var(--bg-92);
     color: var(--gold);
     font-size: 12px;
     letter-spacing: 0.18em;

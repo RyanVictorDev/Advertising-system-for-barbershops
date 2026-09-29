@@ -1,4 +1,7 @@
 class Shop < ApplicationRecord
+  APPEARANCES = %w[dark light].freeze
+  PALETTES = %w[ouro vinho floresta oceano].freeze
+
   has_many :products, -> { order(:position) }, dependent: :destroy
   has_many :playlists, dependent: :destroy
 
@@ -8,6 +11,7 @@ class Shop < ApplicationRecord
   validates :name, length: { maximum: 42 }
   validates :tagline, length: { maximum: 42 }
   validates :playlist_url, length: { maximum: 500 }
+  validate :theme_is_known
   validate :playlist_must_be_recognized
   validate :live_requires_playlist
 
@@ -22,6 +26,11 @@ class Shop < ApplicationRecord
       self.name = name.to_s.strip
       self.tagline = tagline.to_s.strip
       self.playlist_url = playlist_url.to_s.strip
+    end
+
+    def theme_is_known
+      errors.add(:base, "Escolha o tema escuro ou o claro.") unless APPEARANCES.include?(appearance)
+      errors.add(:base, "Escolha uma paleta da casa.") unless PALETTES.include?(palette)
     end
 
     def playlist_must_be_recognized

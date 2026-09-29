@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -81,6 +81,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_160000) do
     t.boolean "singleton", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "appearance", limit: 16, default: "dark", null: false
+    t.string "palette", limit: 16, default: "ouro", null: false
     t.index ["singleton"], name: "index_shops_on_singleton", unique: true
   end
 

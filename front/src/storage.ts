@@ -1,3 +1,5 @@
+import type { Appearance, PaletteId } from "./theme";
+
 export type Product = {
   id: string;
   name: string;
@@ -19,5 +21,7 @@ export type SalonState = {
   products: Product[];
   playlists: SavedPlaylist[];
   live: boolean;
+  appearance: Appearance;
+  palette: PaletteId;
 };
 

@@ -1,4 +1,5 @@
 import type { Product, SalonState, SavedPlaylist } from "./storage";
+import { isAppearance, isPalette } from "./theme";
 
 export type PlaylistHit = SavedPlaylist;
 
@@ -7,6 +8,8 @@ type SalonResponse = {
   tagline: string;
   playlist_url: string;
   live: boolean;
+  appearance?: string;
+  palette?: string;
   products: Array<{
     id: string;
     name: string;
@@ -31,6 +34,8 @@ function mapSalon(body: SalonResponse): SalonState {
     tagline: body.tagline,
     playlistUrl: body.playlist_url,
     live: body.live,
+    appearance: isAppearance(body.appearance) ? body.appearance : "dark",
+    palette: isPalette(body.palette) ? body.palette : "ouro",
     playlists: (body.playlists ?? []).map((item) => ({
       id: item.id,
       url: item.url,
@@ -82,12 +87,16 @@ export async function updateSalon(fields: {
   tagline?: string;
   playlistUrl?: string;
   live?: boolean;
+  appearance?: SalonState["appearance"];
+  palette?: SalonState["palette"];
 }): Promise<SalonState> {
   const salon: Record<string, string | boolean> = {};
   if (fields.shopName !== undefined) salon.name = fields.shopName;
   if (fields.tagline !== undefined) salon.tagline = fields.tagline;
   if (fields.playlistUrl !== undefined) salon.playlist_url = fields.playlistUrl;
   if (fields.live !== undefined) salon.live = fields.live;
+  if (fields.appearance !== undefined) salon.appearance = fields.appearance;
+  if (fields.palette !== undefined) salon.palette = fields.palette;
 
   return readSalon(
     await request("/api/salon", {

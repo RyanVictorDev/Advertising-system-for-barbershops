@@ -4,6 +4,7 @@ import { displayShop, displayTagline, monogram } from "./format";
 import { compressImage } from "./image";
 import { extractPlaylistId } from "./playlist";
 import type { SalonState } from "./storage";
+import { appearanceNames, appearances, palettes, type Appearance, type PaletteId } from "./theme";
 
 type ProductDraft = {
   id: string | null;
@@ -22,6 +23,7 @@ type ConsoleProps = {
   onOpenSalon: () => Promise<string | null>;
   onEndSalon: () => void;
   onSelectPlaylist: (id: string) => Promise<string | null>;
+  onChooseTheme: (appearance: Appearance, palette: PaletteId) => Promise<string | null>;
   onClose?: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
@@ -40,6 +42,7 @@ export function Console({
   onOpenSalon,
   onEndSalon,
   onSelectPlaylist,
+  onChooseTheme,
   onClose,
   onNext,
   onPrevious,
@@ -57,6 +60,7 @@ export function Console({
       onOpenSalon={onOpenSalon}
       onEndSalon={onEndSalon}
       onSelectPlaylist={onSelectPlaylist}
+      onChooseTheme={onChooseTheme}
       variant={variant}
     />
   );
@@ -140,6 +144,7 @@ function SalonFields({
   onOpenSalon,
   onEndSalon,
   onSelectPlaylist,
+  onChooseTheme,
   variant,
 }: ConsoleProps) {
   const nameId = useId();
@@ -272,6 +277,42 @@ function SalonFields({
           autoComplete="off"
           onChange={(event) => update("tagline", event.target.value)}
         />
+      </section>
+
+      <section>
+        <p className="section-label">Aparência</p>
+        <p className="section-note">Escuro ou claro, e a paleta da casa. A TV usa a mesma escolha.</p>
+        <div className="theme-modes" role="group" aria-label="Tema">
+          {appearances.map((appearance) => (
+            <button
+              key={appearance}
+              type="button"
+              className={state.appearance === appearance ? "is-on" : undefined}
+              aria-pressed={state.appearance === appearance}
+              onClick={() => {
+                void onChooseTheme(appearance, state.palette).then(setBanner);
+              }}
+            >
+              {appearanceNames[appearance]}
+            </button>
+          ))}
+        </div>
+        <div className="theme-palettes" role="group" aria-label="Paleta">
+          {palettes.map((palette) => (
+            <button
+              key={palette.id}
+              type="button"
+              className={state.palette === palette.id ? "is-on" : undefined}
+              aria-pressed={state.palette === palette.id}
+              onClick={() => {
+                void onChooseTheme(state.appearance, palette.id).then(setBanner);
+              }}
+            >
+              <span className="swatch" style={{ background: palette.swatch }} />
+              {palette.name}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section>

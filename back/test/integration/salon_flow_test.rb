@@ -13,6 +13,8 @@ class SalonFlowTest < ActionDispatch::IntegrationTest
     assert_equal "", body["tagline"]
     assert_equal "", body["playlist_url"]
     assert_equal false, body["live"]
+    assert_equal "dark", body["appearance"]
+    assert_equal "ouro", body["palette"]
     assert_equal [], body["products"]
   end
 

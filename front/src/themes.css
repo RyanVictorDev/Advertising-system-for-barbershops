@@ -1,0 +1,182 @@
+:root {
+  color-scheme: dark;
+  --bg: #0c0b09;
+  --fg: #f4efe6;
+  --accent: #c6a56a;
+  --danger: #d7a094;
+  --ink: #1a1612;
+  --surface: #14120f;
+  --stage: #050504;
+  --shade: #462018;
+  --scrim: #080706;
+  --primary: #f4efe6;
+  --on-primary: #1a1612;
+  --primary-hover: #ffffff;
+  --on-danger: #1c1412;
+}
+
+:root {
+  --fg-dim: color-mix(in srgb, var(--fg) 72%, transparent);
+  --fg-82: color-mix(in srgb, var(--fg) 82%, transparent);
+  --fg-55: color-mix(in srgb, var(--fg) 55%, transparent);
+  --fg-38: color-mix(in srgb, var(--fg) 38%, transparent);
+  --fg-20: color-mix(in srgb, var(--fg) 20%, transparent);
+  --fg-16: color-mix(in srgb, var(--fg) 16%, transparent);
+  --fg-08: color-mix(in srgb, var(--fg) 8%, transparent);
+  --accent-06: color-mix(in srgb, var(--accent) 6%, transparent);
+  --accent-08: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-09: color-mix(in srgb, var(--accent) 9%, transparent);
+  --accent-10: color-mix(in srgb, var(--accent) 10%, transparent);
+  --accent-12: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-16: color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-20: color-mix(in srgb, var(--accent) 20%, transparent);
+  --accent-22: color-mix(in srgb, var(--accent) 22%, transparent);
+  --accent-28: color-mix(in srgb, var(--accent) 28%, transparent);
+  --accent-34: color-mix(in srgb, var(--accent) 34%, transparent);
+  --accent-35: color-mix(in srgb, var(--accent) 35%, transparent);
+  --accent-45: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-75: color-mix(in srgb, var(--accent) 75%, transparent);
+  --shade-18: color-mix(in srgb, var(--shade) 18%, transparent);
+  --shade-20: color-mix(in srgb, var(--shade) 20%, transparent);
+  --scrim-94: color-mix(in srgb, var(--scrim) 94%, transparent);
+  --scrim-28: color-mix(in srgb, var(--scrim) 28%, transparent);
+  --bg-82: color-mix(in srgb, var(--bg) 82%, transparent);
+  --bg-72: color-mix(in srgb, var(--bg) 72%, transparent);
+  --bg-92: color-mix(in srgb, var(--bg) 92%, transparent);
+  --line: color-mix(in srgb, var(--fg) 14%, transparent);
+  --cream: var(--fg);
+  --cream-dim: var(--fg-dim);
+  --gold: var(--accent);
+  --gold-soft: var(--accent-45);
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans: "Outfit", "Segoe UI", sans-serif;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-appearance="dark"][data-palette="ouro"] {
+  color-scheme: dark;
+  --bg: #0c0b09;
+  --fg: #f4efe6;
+  --accent: #c6a56a;
+  --danger: #d7a094;
+  --ink: #1a1612;
+  --surface: #14120f;
+  --stage: #050504;
+  --shade: #462018;
+  --scrim: #080706;
+  --primary: #f4efe6;
+  --on-primary: #1a1612;
+  --primary-hover: #ffffff;
+}
+
+[data-appearance="light"][data-palette="ouro"] {
+  color-scheme: light;
+  --bg: #f6f1e8;
+  --fg: #1c1814;
+  --accent: #8a6432;
+  --danger: #9c4a3c;
+  --ink: #1c1814;
+  --surface: #fffaf3;
+  --stage: #e7e0d4;
+  --shade: #c4a574;
+  --scrim: #1c1814;
+  --primary: #1c1814;
+  --on-primary: #f6f1e8;
+  --primary-hover: #2e2822;
+}
+
+[data-appearance="dark"][data-palette="vinho"] {
+  color-scheme: dark;
+  --bg: #110c0e;
+  --fg: #f6eeea;
+  --accent: #c4818a;
+  --danger: #e2a598;
+  --ink: #1a1214;
+  --surface: #1a1216;
+  --stage: #070506;
+  --shade: #5a2430;
+  --scrim: #0a0608;
+  --primary: #f6eeea;
+  --on-primary: #1a1214;
+  --primary-hover: #ffffff;
+}
+
+[data-appearance="light"][data-palette="vinho"] {
+  color-scheme: light;
+  --bg: #f8f1ee;
+  --fg: #241418;
+  --accent: #8d3a48;
+  --danger: #9c4038;
+  --ink: #241418;
+  --surface: #fff8f6;
+  --stage: #eadfdc;
+  --shade: #e3b7be;
+  --scrim: #241418;
+  --primary: #241418;
+  --on-primary: #f8f1ee;
+  --primary-hover: #3a2228;
+}
+
+[data-appearance="dark"][data-palette="floresta"] {
+  color-scheme: dark;
+  --bg: #0c100e;
+  --fg: #eef3ee;
+  --accent: #8eae86;
+  --danger: #d7a094;
+  --ink: #121814;
+  --surface: #141a16;
+  --stage: #050806;
+  --shade: #1e3a28;
+  --scrim: #060a08;
+  --primary: #eef3ee;
+  --on-primary: #121814;
+  --primary-hover: #ffffff;
+}
+
+[data-appearance="light"][data-palette="floresta"] {
+  color-scheme: light;
+  --bg: #f3f6f1;
+  --fg: #142016;
+  --accent: #3d6b45;
+  --danger: #9c4a3c;
+  --ink: #142016;
+  --surface: #fbfdf9;
+  --stage: #e1e8df;
+  --shade: #b7cbb4;
+  --scrim: #142016;
+  --primary: #142016;
+  --on-primary: #f3f6f1;
+  --primary-hover: #24382a;
+}
+
+[data-appearance="dark"][data-palette="oceano"] {
+  color-scheme: dark;
+  --bg: #0b0e12;
+  --fg: #eef2f6;
+  --accent: #8aa0bb;
+  --danger: #d7a094;
+  --ink: #12161c;
+  --surface: #141820;
+  --stage: #05070a;
+  --shade: #1c3048;
+  --scrim: #06080c;
+  --primary: #eef2f6;
+  --on-primary: #12161c;
+  --primary-hover: #ffffff;
+}
+
+[data-appearance="light"][data-palette="oceano"] {
+  color-scheme: light;
+  --bg: #f2f5f8;
+  --fg: #141820;
+  --accent: #3a5678;
+  --danger: #9c4a3c;
+  --ink: #141820;
+  --surface: #f9fbfe;
+  --stage: #e0e6ee;
+  --shade: #b7c6d8;
+  --scrim: #141820;
+  --primary: #141820;
+  --on-primary: #f2f5f8;
+  --primary-hover: #243044;
+}

@@ -19,6 +19,24 @@ class ShopTest < ActiveSupport::TestCase
     assert_equal "Navalha", shop.tagline
   end
 
+  test "the house starts dark with the gold palette" do
+    shop = Shop.current
+    assert_equal "dark", shop.appearance
+    assert_equal "ouro", shop.palette
+  end
+
+  test "a theme must be one of the known choices" do
+    shop = Shop.current
+    assert shop.update(appearance: "light", palette: "vinho")
+    assert_equal "light", shop.appearance
+    assert_equal "vinho", shop.palette
+
+    assert_not shop.update(appearance: "azul")
+    assert_includes shop.errors.full_messages, "Escolha o tema escuro ou o claro."
+    assert_not shop.update(palette: "rosa")
+    assert_includes shop.errors.full_messages, "Escolha uma paleta da casa."
+  end
+
   test "name and tagline stop at 42 characters" do
     shop = Shop.current
     assert_not shop.update(name: "a" * 43)
@@ -51,11 +69,12 @@ class ShopTest < ActiveSupport::TestCase
   end
 
   test "a recognized playlist stores the youtube title" do
+    Youtube::PlaylistTitle.singleton_class.alias_method(:fetch_original, :fetch)
     Youtube::PlaylistTitle.define_singleton_method(:fetch) { |_youtube_id| "Select Lectures" }
     assert Shop.current.update(playlist_url: PLAYLIST)
     assert_equal "Select Lectures", Shop.current.playlists.first.title
   ensure
-    Youtube::PlaylistTitle.singleton_class.remove_method(:fetch)
+    Youtube::PlaylistTitle.singleton_class.alias_method(:fetch, :fetch_original)
   end
 
   test "the same playlist updates the history instead of duplicating it" do

@@ -15,7 +15,7 @@ module Api
 
     private
       def salon_params
-        params.expect(salon: [ :name, :tagline, :playlist_url, :live ])
+        params.expect(salon: [ :name, :tagline, :playlist_url, :live, :appearance, :palette ])
       end
   end
 end

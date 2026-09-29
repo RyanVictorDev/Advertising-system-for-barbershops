@@ -15,6 +15,7 @@ import { dataUrlToBlob } from "./image";
 import { extractPlaylistId } from "./playlist";
 import { Stage, type VideoHandle } from "./Stage";
 import type { SalonState } from "./storage";
+import type { Appearance, PaletteId } from "./theme";
 import { loadYouTubeApi } from "./youtube";
 
 type HouseField = "shopName" | "tagline" | "playlistUrl";
@@ -69,6 +70,12 @@ export function App() {
   }, [state?.live]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.appearance = state?.appearance ?? "dark";
+    root.dataset.palette = state?.palette ?? "ouro";
+  }, [state?.appearance, state?.palette]);
+
+  useEffect(() => {
     if (!extractPlaylistId(state?.playlistUrl ?? "")) return;
     void loadYouTubeApi().catch(() => undefined);
   }, [state?.playlistUrl]);
@@ -100,6 +107,35 @@ export function App() {
     });
     return job;
   }, []);
+
+  const chooseTheme = useCallback(
+    (appearance: Appearance, palette: PaletteId) => {
+      const current = stateRef.current;
+      if (!current || (current.appearance === appearance && current.palette === palette)) {
+        return Promise.resolve(null);
+      }
+      const next = { ...current, appearance, palette };
+      stateRef.current = next;
+      setState(next);
+      return enqueue(async () => {
+        const flushed = await flush();
+        if (flushed) return flushed;
+        const latest = stateRef.current;
+        if (latest) {
+          const kept = { ...latest, appearance, palette };
+          stateRef.current = kept;
+          setState(kept);
+        }
+        try {
+          applyServer(await updateSalon({ appearance, palette }));
+          return null;
+        } catch (error) {
+          return error instanceof Error ? error.message : "Não consegui salvar.";
+        }
+      });
+    },
+    [applyServer, enqueue, flush],
+  );
 
   const updateField = useCallback(
     (field: HouseField, value: string) => {
@@ -233,6 +269,7 @@ export function App() {
           onOpenSalon={openSalon}
           onEndSalon={endSalon}
           onSelectPlaylist={choosePlaylist}
+          onChooseTheme={chooseTheme}
         />
       )}
       {state.live && admin ? (
@@ -246,6 +283,7 @@ export function App() {
           onOpenSalon={openSalon}
           onEndSalon={endSalon}
           onSelectPlaylist={choosePlaylist}
+          onChooseTheme={chooseTheme}
           onClose={() => setAdmin(false)}
           onNext={() => playerRef.current?.next()}
           onPrevious={() => playerRef.current?.previous()}
