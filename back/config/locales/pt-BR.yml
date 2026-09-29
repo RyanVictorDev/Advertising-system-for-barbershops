@@ -1,0 +1,14 @@
+pt-BR:
+  activerecord:
+    attributes:
+      shop:
+        name: "Nome"
+        tagline: "Assinatura"
+        playlist_url: "Link da playlist"
+      product:
+        name: "Nome"
+        description: "Descrição"
+        position: "Ordem"
+      playlist:
+        url: "Link da playlist"
+        youtube_id: "Código da playlist"

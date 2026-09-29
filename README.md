@@ -25,26 +25,22 @@ Uma linha dourada no topo marca a troca. Os produtos revezam sozinhos, na ordem 
 
 ### Como rodar
 
-```bash
-npm install
-npm run dev
-```
-
-Abre [http://localhost:5173](http://localhost:5173).
-
-Na TV da mesma rede, use o endereço de rede que o terminal mostrar. O cadastro fica no navegador daquela tela: o que você salvar no notebook não aparece na TV.
-
-Para gerar a versão de produção:
+O salão precisa do Postgres e da API Rails, além da tela.
 
 ```bash
-npm run build
-npm run preview
+docker compose up --build
 ```
+
+Abre [http://localhost:5173](http://localhost:5173). O Compose sobe o Postgres, a API em `back` e a tela em `front`.
+
+Na TV da mesma rede, use o endereço de rede que o terminal mostrar. O cadastro fica no servidor, então a TV e o notebook veem a mesma casa.
+
+O Postgres do projeto sobe na porta **5433**, para não esbarrar num Postgres que já esteja na 5432. A API fica na 3000.
 
 ### Como usar
 
 1. Escreve o nome da casa e uma assinatura curta.
-2. Cola o link da playlist. Vale o link de compartilhar (`.../playlist?list=...`) ou um vídeo que já traga o `list=` na URL.
+2. Cola o link da playlist. Vale o link de compartilhar (`.../playlist?list=...`) ou um vídeo que já traga o `list=` na URL. As playlists já usadas ficam embaixo, para procurar e escolher de novo.
 3. Adiciona os produtos: foto, nome e descrição. **Subir** e **descer** mudam a ordem da vitrine.
 4. Clica em **Abrir o salão**. A tela entra em tela cheia.
 
@@ -60,7 +56,9 @@ Se o navegador segurar o áudio, aparece **Ativar som**.
 
 ### Os dados
 
-Por enquanto tudo fica no cache deste navegador (`localStorage`). Nome, playlist, produtos e fotos. Nada sai da máquina. Uma foto muito pesada é reduzida antes de salvar. Se o cache encher, a tela avisa.
+Nome, assinatura, playlist atual, histórico de playlists, produtos e as fotos ficam no Postgres. A foto vai numa coluna binária do mesmo banco, então no Railway não precisa de volume nem de bucket. Ainda não há login: é uma barbearia por instalação.
+
+A tela reduz a foto antes de enviar. O servidor recusa o que não for JPEG, PNG ou WebP, ou o que passar de 8 MB.
 
 ### Playlist
 
@@ -85,26 +83,22 @@ A thin gold line at the top marks the change. Products rotate on their own, in t
 
 ### Run it
 
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-On a TV in the same network, use the network address printed in the terminal. The catalog lives in that screen's browser: what you save on a laptop does not show up on the TV.
-
-Production build:
+The screen needs Postgres and the Rails API.
 
 ```bash
-npm run build
-npm run preview
+docker compose up --build
 ```
+
+Open [http://localhost:5173](http://localhost:5173). Compose starts Postgres, the API in `back`, and the screen in `front`.
+
+On a TV in the same network, use the network address printed in the terminal. The catalog lives on the server, so the TV and the laptop share the same shop.
+
+Project Postgres listens on port **5433**, so it does not collide with a Postgres already bound to 5432. The API listens on 3000.
 
 ### How to use it
 
 1. Set the shop name and a short signature.
-2. Paste the playlist link. A share link (`.../playlist?list=...`) works, and so does a watch URL that already includes `list=`.
+2. Paste the playlist link. A share link (`.../playlist?list=...`) works, and so does a watch URL that already includes `list=`. Playlists you have used stay underneath, so you can search and pick one again.
 3. Add products: photo, name, and description. **Subir** and **descer** change the order on screen.
 4. Choose **Abrir o salão**. The screen goes fullscreen.
 
@@ -120,7 +114,9 @@ If the browser holds the audio, **Ativar som** appears.
 
 ### Data
 
-For now everything stays in this browser's cache (`localStorage`): name, playlist, products, and photos. Nothing leaves the machine. Large photos are resized before they are saved. If the cache fills up, the screen says so.
+Shop name, signature, the current playlist, playlist history, products, and photos live in Postgres. A photo is a binary column in that same database, so a Railway deploy does not need a volume or a file bucket. There is no login yet: one shop per installation.
+
+The screen shrinks the photo before upload. The server refuses anything that is not JPEG, PNG, or WebP, or anything over 8 MB.
 
 ### Playlists
 

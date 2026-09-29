@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ever
+      POSTGRES_PASSWORD: ever
+      POSTGRES_DB: ever_development
+    ports:
+      # 5433 on the host: a local Postgres may already own 5432.
+      - "5433:5432"
+    volumes:
+      - ever_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ever -d ever_development"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  back:
+    build:
+      context: ./back
+      dockerfile: Dockerfile.dev
+    environment:
+      DOCKER: "1"
+      RAILS_ENV: development
+      DATABASE_HOST: db
+      DATABASE_PORT: "5432"
+      PIDFILE: /tmp/server.pid
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./back:/rails
+      - back_tmp:/rails/tmp
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["bash", "-c", "rm -f tmp/pids/server.pid && ruby bin/rails db:prepare && exec ruby bin/rails server -b 0.0.0.0 -p 3000"]
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    environment:
+      API_PROXY_TARGET: http://back:3000
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./front:/app
+      - front_node_modules:/app/node_modules
+    depends_on:
+      - back
+
+volumes:
+  ever_pg:
+  back_tmp:
+  front_node_modules:

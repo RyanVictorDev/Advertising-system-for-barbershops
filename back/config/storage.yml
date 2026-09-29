@@ -1,0 +1,4 @@
+# Bytes in Postgres (bytea). The Railway container disk is wiped on every
+# deploy, and a separate file bucket would be another bill.
+postgres:
+  service: Postgres

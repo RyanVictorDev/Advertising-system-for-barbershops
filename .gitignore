@@ -2,3 +2,14 @@ node_modules
 dist
 .DS_Store
 *.local
+
+back/log/*
+!back/log/.keep
+back/tmp/*
+back/storage/*
+!back/storage/.keep
+!back/tmp/.keep
+!back/tmp/pids/.keep
+!back/tmp/storage/.keep
+back/config/master.key
+back/.env*
