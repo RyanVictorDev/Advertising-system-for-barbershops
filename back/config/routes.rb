@@ -7,6 +7,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     resource :salon, only: [ :show, :update ], controller: "salon"
+    resource :pulse, only: [ :show ], controller: "pulses"
+    resource :playback, only: [ :create ], controller: "playbacks"
     resources :products, only: [ :create, :update, :destroy ]
     resource :product_order, only: [ :update ]
     resources :playlists, only: [ :index ] do

@@ -4,7 +4,7 @@ class Product < ApplicationRecord
   ACCEPTED_TYPES = %w[image/jpeg image/jpg image/png image/webp].freeze
   MAX_IMAGE_BYTES = 8.megabytes
 
-  belongs_to :shop
+  belongs_to :shop, touch: true
   has_one_attached :image, dependent: :purge
 
   before_validation :normalize_text
@@ -29,6 +29,7 @@ class Product < ApplicationRecord
       ordered.each_with_index do |id, index|
         shop.products.where(id: id).update_all(position: index + 1)
       end
+      shop.touch
     end
   end
 

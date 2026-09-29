@@ -4,6 +4,7 @@ class Shop < ApplicationRecord
 
   has_many :products, -> { order(:position) }, dependent: :destroy
   has_many :playlists, dependent: :destroy
+  has_many :playback_commands, dependent: :destroy
 
   before_validation :normalize_text
   after_save :remember_playlist, if: :saved_change_to_playlist_url?
@@ -19,6 +20,10 @@ class Shop < ApplicationRecord
     first || create!
   rescue ActiveRecord::RecordNotUnique
     first!
+  end
+
+  def revision_stamp
+    updated_at.iso8601(6)
   end
 
   private

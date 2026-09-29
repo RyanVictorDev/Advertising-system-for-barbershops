@@ -68,12 +68,24 @@ class ProductTest < ActiveSupport::TestCase
     third = build_product(name: "Terceiro")
     [ first, second, third ].each(&:save!)
 
-    Product.reorder!(@shop, [ third.id, first.id, second.id ])
+    stamp = @shop.updated_at
+    travel 1.second do
+      Product.reorder!(@shop, [ third.id, first.id, second.id ])
+    end
+    assert_operator @shop.reload.updated_at, :>, stamp
     assert_equal [ third.id, first.id, second.id ], @shop.products.order(:position).pluck(:id)
 
     error = assert_raises(Product::OrderError) { Product.reorder!(@shop, [ first.id ]) }
     assert_equal "A ordem precisa incluir todos os produtos desta casa.", error.message
     assert_equal [ third.id, first.id, second.id ], @shop.products.order(:position).pluck(:id)
+  end
+
+  test "saving a product marks the house as changed" do
+    stamp = @shop.updated_at
+    travel 1.second do
+      assert build_product.save
+    end
+    assert_operator @shop.reload.updated_at, :>, stamp
   end
 
   test "removing a product removes the file" do

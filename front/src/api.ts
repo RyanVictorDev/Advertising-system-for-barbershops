@@ -3,6 +3,8 @@ import { isAppearance, isPalette } from "./theme";
 
 export type PlaylistHit = SavedPlaylist;
 
+export type PlaybackAction = "pause" | "play" | "next" | "previous";
+
 type SalonResponse = {
   shop_name: string;
   tagline: string;
@@ -10,6 +12,7 @@ type SalonResponse = {
   live: boolean;
   appearance?: string;
   palette?: string;
+  updated_at?: string;
   products: Array<{
     id: string;
     name: string;
@@ -36,6 +39,7 @@ function mapSalon(body: SalonResponse): SalonState {
     live: body.live,
     appearance: isAppearance(body.appearance) ? body.appearance : "dark",
     palette: isPalette(body.palette) ? body.palette : "ouro",
+    updatedAt: body.updated_at ?? "",
     playlists: (body.playlists ?? []).map((item) => ({
       id: item.id,
       url: item.url,
@@ -165,4 +169,36 @@ export async function searchPlaylists(query: string): Promise<PlaylistHit[]> {
 
 export async function selectPlaylist(id: string): Promise<SalonState> {
   return readSalon(await request(`/api/playlists/${id}/select`, { method: "POST" }));
+}
+
+export type Pulse = {
+  updatedAt: string;
+  playbackSeq: number;
+  commands: Array<{ seq: number; action: PlaybackAction }>;
+};
+
+export async function fetchPulse(after: number | null): Promise<Pulse> {
+  const path = after === null ? "/api/pulse" : `/api/pulse?after=${String(after)}`;
+  const response = await request(path);
+  if (!response.ok) throw new ApiError(await readError(response));
+  const body = (await response.json()) as {
+    updated_at: string;
+    playback_seq: number;
+    commands: Array<{ seq: number; action: PlaybackAction }>;
+  };
+  return {
+    updatedAt: body.updated_at,
+    playbackSeq: body.playback_seq,
+    commands: body.commands ?? [],
+  };
+}
+
+export async function sendPlayback(action: PlaybackAction): Promise<{ seq: number; action: PlaybackAction }> {
+  const response = await request("/api/playback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ playback: { action } }),
+  });
+  if (!response.ok) throw new ApiError(await readError(response));
+  return (await response.json()) as { seq: number; action: PlaybackAction };
 }

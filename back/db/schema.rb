@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,6 +48,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "playback_commands", force: :cascade do |t|
+    t.bigint "shop_id", null: false
+    t.integer "seq", null: false
+    t.string "action", limit: 16, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["shop_id", "seq"], name: "index_playback_commands_on_shop_id_and_seq", unique: true
+    t.index ["shop_id"], name: "index_playback_commands_on_shop_id"
   end
 
   create_table "playlists", force: :cascade do |t|
@@ -88,6 +98,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_170000) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "playback_commands", "shops"
   add_foreign_key "playlists", "shops"
   add_foreign_key "products", "shops"
 end

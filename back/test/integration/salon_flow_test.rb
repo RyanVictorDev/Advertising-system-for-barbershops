@@ -64,6 +64,61 @@ class SalonFlowTest < ActionDispatch::IntegrationTest
     assert_equal PLAYLIST, JSON.parse(response.body)["playlist_url"]
   end
 
+  test "playback commands reach every open screen once" do
+    get api_pulse_path
+    assert_response :success
+    opened = JSON.parse(response.body)
+    assert_equal [], opened["commands"]
+    assert_equal 0, opened["playback_seq"]
+    assert opened["updated_at"].present?
+
+    post api_playback_path, params: { playback: { action: "nope" } }, as: :json
+    assert_response :unprocessable_entity
+    assert_includes JSON.parse(response.body)["errors"], "Esse comando de reprodução não existe."
+
+    %w[next next pause].each do |action|
+      post api_playback_path, params: { playback: { action: action } }, as: :json
+      assert_response :success
+    end
+
+    get api_pulse_path, params: { after: opened["playback_seq"] }
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal %w[next next pause], body["commands"].map { |item| item["action"] }
+    assert_equal 3, body["playback_seq"]
+
+    get api_pulse_path, params: { after: body["playback_seq"] }
+    assert_equal [], JSON.parse(response.body)["commands"]
+
+    patch api_salon_path, params: { salon: { name: "Casa Pulso" } }, as: :json
+    assert_response :success
+    get api_pulse_path, params: { after: body["playback_seq"] }
+    assert_not_equal opened["updated_at"], JSON.parse(response.body)["updated_at"]
+  end
+
+  test "a playback command expires so a new screen does not replay it" do
+    post api_playback_path, params: { playback: { action: "next" } }, as: :json
+    assert_response :success
+    seq = JSON.parse(response.body)["seq"]
+
+    travel 30.seconds do
+      get api_pulse_path, params: { after: seq - 1 }
+      assert_response :success
+      body = JSON.parse(response.body)
+      assert_equal [], body["commands"]
+      assert_equal seq, body["playback_seq"]
+    end
+
+    get api_pulse_path
+    assert_equal [], JSON.parse(response.body)["commands"]
+  end
+
+  test "a pulse refuses a position that is not a number" do
+    get api_pulse_path, params: { after: "depois" }
+    assert_response :unprocessable_entity
+    assert_includes JSON.parse(response.body)["errors"], "Não entendi a posição da reprodução."
+  end
+
   test "history is capped at the twenty most recent" do
     21.times do |index|
       patch api_salon_path, params: { salon: { playlist_url: format("PL%010dxxxx", index) } }, as: :json

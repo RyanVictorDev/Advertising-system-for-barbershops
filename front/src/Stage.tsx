@@ -40,10 +40,10 @@ type Phase = "show" | "clear" | "move";
 
 export type VideoHandle = {
   unmute: () => void;
-  next: () => void;
-  previous: () => void;
-  pause: () => void;
-  play: () => void;
+  next: () => boolean;
+  previous: () => boolean;
+  pause: () => boolean;
+  play: () => boolean;
 };
 
 type VideoFrameProps = {
@@ -423,29 +423,33 @@ const VideoFrame = memo(
       },
       next() {
         const player = playerRef.current;
-        if (!player) return;
+        if (!player) return false;
         holdRef.current = false;
         player.nextVideo();
         player.playVideo();
+        return true;
       },
       previous() {
         const player = playerRef.current;
-        if (!player) return;
+        if (!player) return false;
         holdRef.current = false;
         player.previousVideo();
         player.playVideo();
+        return true;
       },
       pause() {
         const player = playerRef.current;
-        if (!player) return;
+        if (!player) return false;
         holdRef.current = true;
         player.pauseVideo();
+        return true;
       },
       play() {
         const player = playerRef.current;
-        if (!player) return;
+        if (!player) return false;
         holdRef.current = false;
         player.playVideo();
+        return true;
       },
     }));
 

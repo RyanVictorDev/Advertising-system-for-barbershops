@@ -3,11 +3,14 @@ import {
   ApiError,
   createProduct,
   deleteProduct,
+  fetchPulse,
   fetchSalon,
   reorderProducts,
   selectPlaylist,
+  sendPlayback,
   updateProduct,
   updateSalon,
+  type PlaybackAction,
 } from "./api";
 import { Console } from "./Console";
 import { displayShop } from "./format";
@@ -20,6 +23,15 @@ import { loadYouTubeApi } from "./youtube";
 
 type HouseField = "shopName" | "tagline" | "playlistUrl";
 type HousePatch = Partial<Pick<SalonState, HouseField>>;
+type IssuedCommand = { seq: number; action: PlaybackAction };
+
+const PULSE_MS = 700;
+
+function wait(ms: number) {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
 
 export function App() {
   const [state, setState] = useState<SalonState | null>(null);
@@ -33,6 +45,10 @@ export function App() {
   const pendingRef = useRef<HousePatch | null>(null);
   const timerRef = useRef<number | null>(null);
   const flightRef = useRef<Promise<string | null> | null>(null);
+  const cursorRef = useRef<number | null>(null);
+  const seenUpdatedAtRef = useRef<string | null>(null);
+  const issuedRef = useRef<IssuedCommand[]>([]);
+  const gateRef = useRef(Promise.resolve());
   const reportNowPlaying = useCallback((title: string) => {
     setNowPlaying((current) => (current === title ? current : title));
   }, []);
@@ -40,32 +56,100 @@ export function App() {
     playingRef.current = isPlaying;
     setPlaying((current) => (current === isPlaying ? current : isPlaying));
   }, []);
-  const togglePlayback = useCallback(() => {
-    const next = !playingRef.current;
-    playingRef.current = next;
-    setPlaying(next);
-    if (next) playerRef.current?.play();
-    else playerRef.current?.pause();
-  }, []);
-  const skip = useCallback((direction: "next" | "previous") => {
-    playingRef.current = true;
-    setPlaying(true);
-    if (direction === "next") playerRef.current?.next();
-    else playerRef.current?.previous();
-  }, []);
-
   const applyServer = useCallback((salon: SalonState) => {
+    seenUpdatedAtRef.current = salon.updatedAt;
     const pending = pendingRef.current;
     const next = pending ? { ...salon, ...pending } : salon;
     stateRef.current = next;
     setState(next);
   }, []);
 
+  const runExclusive = useCallback((task: () => Promise<void> | void) => {
+    const run = gateRef.current.then(task, task);
+    gateRef.current = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  }, []);
+
+  const applyCommand = useCallback((action: PlaybackAction) => {
+    if (stateRef.current?.live !== true) return true;
+    const player = playerRef.current;
+    if (!player) return false;
+    if (action === "pause") return player.pause();
+    if (action === "play") return player.play();
+    if (action === "next") return player.next();
+    if (action === "previous") return player.previous();
+    return true;
+  }, []);
+
+  const absorb = useCallback(
+    async (commands: IssuedCommand[], playbackSeq: number) => {
+      let playing = playingRef.current;
+      let touched = false;
+      let blocked = false;
+      for (const command of commands) {
+        if (cursorRef.current !== null && command.seq <= cursorRef.current) continue;
+        if (!applyCommand(command.action)) {
+          blocked = true;
+          break;
+        }
+        cursorRef.current = command.seq;
+        playing = command.action !== "pause";
+        touched = true;
+        if (command.action === "next" || command.action === "previous") await wait(400);
+      }
+      if (!blocked && cursorRef.current !== null) {
+        cursorRef.current = Math.max(cursorRef.current, playbackSeq);
+      }
+      if (touched) {
+        playingRef.current = playing;
+        setPlaying(playing);
+      }
+      issuedRef.current = issuedRef.current.filter(
+        (command) => cursorRef.current === null || command.seq > cursorRef.current,
+      );
+    },
+    [applyCommand],
+  );
+
+  const publish = useCallback(
+    (action: PlaybackAction) =>
+      sendPlayback(action).then((issued) => {
+        issuedRef.current = [ ...issuedRef.current, issued ];
+      }),
+    [],
+  );
+
+  const togglePlayback = useCallback(() => {
+    const next = !playingRef.current;
+    const previous = playingRef.current;
+    playingRef.current = next;
+    setPlaying(next);
+    void publish(next ? "play" : "pause").catch(() => {
+      if (playingRef.current === next) {
+        playingRef.current = previous;
+        setPlaying(previous);
+      }
+    });
+  }, [publish]);
+
+  const skip = useCallback(
+    (direction: "next" | "previous") => {
+      playingRef.current = true;
+      setPlaying(true);
+      void publish(direction).catch(() => undefined);
+    },
+    [publish],
+  );
+
   useEffect(() => {
     let alive = true;
     fetchSalon()
       .then((salon) => {
         if (!alive) return;
+        seenUpdatedAtRef.current = salon.updatedAt;
         stateRef.current = salon;
         setState(salon);
       })
@@ -98,6 +182,75 @@ export function App() {
     if (!extractPlaylistId(state?.playlistUrl ?? "")) return;
     void loadYouTubeApi().catch(() => undefined);
   }, [state?.playlistUrl]);
+
+  useEffect(() => {
+    let alive = true;
+    let timer = 0;
+
+    const syncSalon = async (updatedAt: string) => {
+      const seen = seenUpdatedAtRef.current;
+      if (!updatedAt || !seen || updatedAt === seen) return;
+      if (flightRef.current || pendingRef.current) return;
+      try {
+        const salon = await fetchSalon();
+        if (!alive || flightRef.current || pendingRef.current) return;
+        if (seenUpdatedAtRef.current !== seen) return;
+        applyServer(salon);
+      } catch {
+        return;
+      }
+    };
+
+    const tick = async () => {
+      if (!stateRef.current) return;
+      try {
+        const after = cursorRef.current;
+        const pulse = await fetchPulse(after);
+        if (!alive) return;
+        await runExclusive(async () => {
+          if (!alive) return;
+          if (cursorRef.current === null) {
+            const mine = issuedRef.current
+              .filter((command) => command.seq <= pulse.playbackSeq)
+              .sort((left, right) => left.seq - right.seq);
+            if (mine.length === 0) {
+              cursorRef.current = pulse.playbackSeq;
+              return;
+            }
+            const first = mine[0];
+            if (!first) return;
+            cursorRef.current = first.seq - 1;
+            await absorb(mine, pulse.playbackSeq);
+            return;
+          }
+          if (after === null) return;
+          const pending = pulse.commands.filter((command) => command.seq > (cursorRef.current ?? 0));
+          await absorb(pending, pulse.playbackSeq);
+        });
+        if (!alive) return;
+        await syncSalon(pulse.updatedAt);
+      } catch {
+        return;
+      }
+    };
+
+    const loop = () => {
+      timer = window.setTimeout(() => {
+        void tick().finally(() => {
+          if (alive) loop();
+        });
+      }, PULSE_MS);
+    };
+
+    void tick().finally(() => {
+      if (alive) loop();
+    });
+
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+    };
+  }, [absorb, applyServer, runExclusive]);
 
   const flush = useCallback(async (): Promise<string | null> => {
     if (timerRef.current) {

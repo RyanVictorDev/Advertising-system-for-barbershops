@@ -23,5 +23,6 @@ export type SalonState = {
   live: boolean;
   appearance: Appearance;
   palette: PaletteId;
+  updatedAt: string;
 };
 

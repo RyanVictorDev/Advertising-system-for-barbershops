@@ -11,6 +11,7 @@ class SalonSerializer
       live: @shop.live,
       appearance: @shop.appearance,
       palette: @shop.palette,
+      updated_at: @shop.revision_stamp,
       products: @shop.products.map { |product| ProductSerializer.new(product).as_json },
       playlists: Playlist.with_titles(@shop.playlists.recent.limit(20)).map { |playlist| PlaylistSerializer.new(playlist).as_json }
     }
