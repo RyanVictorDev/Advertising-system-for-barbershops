@@ -1,6 +1,8 @@
 export type YouTubePlayer = {
   loadPlaylist: (args: { list: string; index?: number }) => void;
   playVideo: () => void;
+  nextVideo: () => void;
+  previousVideo: () => void;
   mute: () => void;
   unMute: () => void;
   isMuted: () => boolean;

@@ -11,6 +11,9 @@ type ConsoleProps = {
   onOpenSalon: () => string | null;
   onEndSalon: () => void;
   onClose?: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
+  nowPlaying?: string;
 };
 
 type Draft = {
@@ -22,7 +25,17 @@ type Draft = {
 
 const emptyDraft: Draft = { id: null, name: "", description: "", image: "" };
 
-export function Console({ variant, state, onChange, onOpenSalon, onEndSalon, onClose }: ConsoleProps) {
+export function Console({
+  variant,
+  state,
+  onChange,
+  onOpenSalon,
+  onEndSalon,
+  onClose,
+  onNext,
+  onPrevious,
+  nowPlaying,
+}: ConsoleProps) {
   const shop = displayShop(state.shopName);
   const tagline = displayTagline(state.tagline);
   const fields = (
@@ -50,6 +63,19 @@ export function Console({ variant, state, onChange, onOpenSalon, onEndSalon, onC
               </button>
             ) : null}
           </div>
+          {onNext && onPrevious ? (
+            <div className="skip-row">
+              <div className="skip-actions">
+                <button type="button" className="btn btn-ghost" onClick={onPrevious}>
+                  Música anterior
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={onNext}>
+                  Próxima música
+                </button>
+              </div>
+              <p>{nowPlaying ? nowPlaying : "A faixa em cena aparece aqui."}</p>
+            </div>
+          ) : null}
           {fields}
         </div>
       </aside>

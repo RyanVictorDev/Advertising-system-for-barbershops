@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type RefObject,
 } from "react";
 import { displayShop, displayTagline, formatClock, formatDay, greeting, monogram } from "./format";
 import { computeScene, toStyle, type Box, type Mode, type SceneCard, type VoidSpot } from "./layout";
@@ -29,12 +30,16 @@ type StageProps = {
   adminOpen: boolean;
   onOpenAdmin: () => void;
   onCloseAdmin: () => void;
+  playerRef: RefObject<VideoHandle | null>;
+  onNowPlaying: (title: string) => void;
 };
 
 type Phase = "show" | "clear" | "move";
 
 export type VideoHandle = {
   unmute: () => void;
+  next: () => void;
+  previous: () => void;
 };
 
 type VideoFrameProps = {
@@ -44,9 +49,8 @@ type VideoFrameProps = {
   onNeedsSound: (needs: boolean) => void;
 };
 
-export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin }: StageProps) {
+export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin, playerRef, onNowPlaying }: StageProps) {
   const stageRef = useRef<HTMLElement>(null);
-  const videoRef = useRef<VideoHandle>(null);
   const [size, setSize] = useState(() => ({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -183,8 +187,12 @@ export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin }: StageProp
     setVideoTitle((current) => (current === title ? current : title));
   }, []);
 
+  useEffect(() => {
+    onNowPlaying(videoTitle);
+  }, [onNowPlaying, videoTitle]);
+
   const enableSound = () => {
-    videoRef.current?.unmute();
+    playerRef.current?.unmute();
     setNeedsSound(false);
   };
 
@@ -219,7 +227,7 @@ export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin }: StageProp
 
       {playlistId ? (
         <VideoFrame
-          ref={videoRef}
+          ref={playerRef}
           playlistId={playlistId}
           box={scene.video}
           onTitle={onTitle}
@@ -254,6 +262,12 @@ export function Stage({ state, adminOpen, onOpenAdmin, onCloseAdmin }: StageProp
           Ativar som
         </button>
       ) : null}
+
+      {adminOpen ? null : (
+        <button type="button" className="mobile-admin" onClick={onOpenAdmin}>
+          Gestão
+        </button>
+      )}
 
       {adsOn ? (
         <div className="rhythm" key={mode}>
@@ -383,6 +397,18 @@ const VideoFrame = memo(
         if (!player) return;
         player.unMute();
         player.setVolume(80);
+        player.playVideo();
+      },
+      next() {
+        const player = playerRef.current;
+        if (!player) return;
+        player.nextVideo();
+        player.playVideo();
+      },
+      previous() {
+        const player = playerRef.current;
+        if (!player) return;
+        player.previousVideo();
         player.playVideo();
       },
     }));

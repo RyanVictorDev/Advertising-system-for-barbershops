@@ -2,13 +2,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Console } from "./Console";
 import { displayShop } from "./format";
 import { extractPlaylistId } from "./playlist";
-import { Stage } from "./Stage";
+import { Stage, type VideoHandle } from "./Stage";
 import { loadState, saveState, type SalonState } from "./storage";
 import { loadYouTubeApi } from "./youtube";
 
 export function App() {
   const [state, setState] = useState(loadState);
   const [admin, setAdmin] = useState(false);
+  const [nowPlaying, setNowPlaying] = useState("");
+  const playerRef = useRef<VideoHandle>(null);
+  const reportNowPlaying = useCallback((title: string) => {
+    setNowPlaying((current) => (current === title ? current : title));
+  }, []);
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -57,6 +62,8 @@ export function App() {
           adminOpen={admin}
           onOpenAdmin={() => setAdmin(true)}
           onCloseAdmin={() => setAdmin(false)}
+          playerRef={playerRef}
+          onNowPlaying={reportNowPlaying}
         />
       ) : (
         <Console variant="page" state={state} onChange={commit} onOpenSalon={openSalon} onEndSalon={endSalon} />
@@ -69,6 +76,9 @@ export function App() {
           onOpenSalon={openSalon}
           onEndSalon={endSalon}
           onClose={() => setAdmin(false)}
+          onNext={() => playerRef.current?.next()}
+          onPrevious={() => playerRef.current?.previous()}
+          nowPlaying={nowPlaying}
         />
       ) : null}
     </>
