@@ -563,30 +563,50 @@ button { cursor: pointer; }
 }
 
 .drawer-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "title back"
+    "actions track";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 14px;
   margin-bottom: 12px;
 }
 
-.skip-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  margin: 4px 0 8px;
-}
+.drawer-title { grid-area: title; align-self: end; }
+
+.desk-bar { display: contents; }
+
+.drawer-head .btn-primary { grid-area: back; justify-self: end; }
 
 .skip-actions {
   display: flex;
+  grid-area: actions;
   flex-shrink: 0;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.skip-row p {
+.transport {
+  position: relative;
+}
+
+.transport svg {
+  display: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.skip-now {
+  grid-area: track;
   margin: 0;
+  min-width: 0;
   color: var(--cream-dim);
   font-size: 14px;
   line-height: 1.35;
@@ -1007,6 +1027,37 @@ button { cursor: pointer; }
   .greeting, .clock span, .hints { display: none; }
   .brand-name { max-width: calc(100vw - 168px); font-size: 22px; letter-spacing: 0.05em; }
   .sound { right: 16px; top: 64px; }
+  .drawer-inner { padding: 22px 20px 48px; }
+  .drawer-head {
+    grid-template-areas:
+      "title title"
+      "back actions"
+      "track track";
+  }
+  .drawer-head h2 { font-size: 30px; }
+  .drawer-head .btn-primary { justify-self: start; }
+  .skip-actions { justify-self: start; flex-wrap: nowrap; }
+  .skip-now { margin-top: 2px; }
+  .transport {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 44px;
+    padding: 0;
+  }
+  .transport svg { display: block; }
+  .transport span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
   .mobile-admin {
     display: block;
     position: fixed;
